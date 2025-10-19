@@ -34,5 +34,4 @@ derive_neq = false
 rename_variants = "ScreamingSnakeCase"
 
 [fn]
-prefix = "mozilla_non_crypto_"
 rename_args = "CamelCase"

@@ -4,18 +4,18 @@
 
 ## Overview
 - **Total C++ Lines**: ~10,000,000 (estimated)
-- **Rust Lines Added**: 690
-- **Replacement Progress**: 0.007%
-- **Components Ported**: 2
+- **Rust Lines Added**: 1,523
+- **Replacement Progress**: 0.015%
+- **Components Ported**: 3
 - **Last Updated**: 2025-10-19
 
 ## Porting Statistics
 
 | Metric | Count |
 |--------|-------|
-| Components ported | 2 |
-| C++ lines removed | 319 (via overlay) |
-| Rust lines added | 690 |
+| Components ported | 3 |
+| C++ lines removed | 441 (via overlay) |
+| Rust lines added | 1,523 |
 | Test regressions | 0 |
 | Upstream conflicts | 0 |
 
@@ -59,6 +59,34 @@
 - **Performance**: Expected neutral (simple atomic ops)
 - **Upstream Impact**: Zero conflicts maintained - reuses existing local/ infrastructure
 - **Call Sites**: 34 calls across 11 files (DOM, networking, threading, timers, testing)
+
+### 3. XorShift128PlusRNG ✅
+- **Date**: 2025-10-19
+- **Location**: mfbt/XorShift128PlusRNG.h → local/rust/firefox_xorshift128plus/
+- **C++ Lines**: 122 (header-only)
+- **Rust Lines**: 833 (lib.rs + ffi.rs + tests.rs + README.md)
+- **Test Coverage**: 4 C++ test functions (remain in C++, call via FFI) + 10 Rust tests
+- **Selection Score**: 36/40
+  - Simplicity: 10/10 (122 lines, 4 deps, no platform code)
+  - Isolation: 9/10 (22 call sites, 4 header deps, no inheritance)
+  - Stability: 10/10 (1 commit/year, very stable)
+  - Testability: 7/10 (comprehensive C++ tests, algorithmic validation)
+- **Rationale**: XorShift128+ is a well-documented, mathematically-proven PRNG with minimal dependencies and excellent isolation. Pure computation with no I/O or platform dependencies - perfect for demonstrating Rust's zero-cost abstractions in low-level bit manipulation.
+- **Challenges**:
+  - JIT integration: offsetOfState0/1 methods used by JIT for direct memory access
+  - Struct layout: Must guarantee #[repr(C)] matches C++ exactly (16 bytes)
+  - Bit-exact arithmetic: XOR, shift, wrapping_add must match C++ perfectly
+  - Double precision: nextDouble() must use exact 53-bit mantissa extraction
+  - Performance: Used in Math.random() JIT compilation (critical path)
+- **Solutions**:
+  - Used #[repr(C)] for guaranteed memory layout
+  - Compile-time assertions verify struct size and offsets
+  - Wrapping arithmetic matches C++ unsigned overflow semantics
+  - FFI layer catches panics to prevent unwinding into C++
+  - Comprehensive tests validate bit-exact algorithm implementation
+- **Performance**: Target ~1-2 CPU cycles per call (from academic paper), Rust should match via inlining
+- **Upstream Impact**: Zero conflicts maintained - reuses existing local/ infrastructure
+- **Call Sites**: 54 references across 18 files (primarily JS engine JIT, memory allocator, privacy/fingerprinting resistance)
 
 ## Components In Progress
 
@@ -131,33 +159,73 @@ Every port must:
   - Debug assertions for invariant checking
   - Integration tests covering FFI layer completely
 
+#### Port #3: XorShift128PlusRNG
+- **What went well**:
+  - #[repr(C)] guarantees C-compatible memory layout (critical for JIT)
+  - Wrapping arithmetic in Rust maps perfectly to C++ unsigned overflow
+  - Algorithm is pure computation - no platform dependencies
+  - Test coverage excellent: 4 C++ tests + 10 Rust tests
+  - cbindgen integration now smooth (reused patterns from Ports #1-2)
+- **Challenges**:
+  - offset_of!() macro doesn't support array indexing (state[0], state[1])
+  - Struct layout must be exact for JIT code that directly accesses state
+  - Double precision must match C++ bit-for-bit (53-bit mantissa)
+  - Performance-critical: used in Math.random() JIT compilation
+- **Solutions**:
+  - Manually calculated offsets (state[0]=0, state[1]=8) with const fns
+  - Compile-time assertions verify struct size (16 bytes) and offsets
+  - Used size_of::<u64>() for state[1] offset calculation
+  - FFI layer catches panics to prevent unwinding into C++
+  - Bit-exact test (TestDumbSequence) validates algorithm correctness
+- **Reusable patterns**:
+  - Const fn offset methods for JIT compatibility
+  - Compile-time struct layout assertions
+  - Panic-catching FFI wrappers for safety
+  - Comprehensive test suite (both C++ and Rust)
+  - Documentation linking to academic papers for algorithm validation
+
+## Monthly Progress
+  - Atomic operations straightforward with std::sync::atomic
+  - Comprehensive test coverage (16 tests) ensures correctness
+- **Challenges**:
+  - FFI enum transmute failed for arbitrary bit combinations (0x3 = ThreadScheduling | NetworkScheduling)
+  - Had to handle raw u32 values directly instead of enum variants
+  - Intentionally preserving non-thread-safe rand() required FFI to libc
+- **Solutions**:
+  - Use raw u32 in FFI layer, bitwise operations for feature checking
+  - Call libc::rand() via FFI for exact C++ compatibility
+  - Extensive tests validate behavior matches C++
+- **Reusable patterns**:
+  - Static global state with AtomicU32 (Ordering::Relaxed)
+  - Bit flag enums with repr(u32)
+  - Debug assertions for invariant checking
+  - Integration tests covering FFI layer completely
+
 ## Monthly Progress
 
 ### October 2025
-- Components ported: 2 (+1)
-- C++ lines removed: 319 (+112)
-- Rust lines added: 690 (+395)
-- Replacement rate: 0.007% (+0.004%)
+- Components ported: 3 (+1)
+- C++ lines removed: 441 (+122 via overlay)
+- Rust lines added: 1,523 (+833)
+- Replacement rate: 0.015% (+0.008%)
 - Upstream syncs: 0 (initial implementation)
 - **Highlights**:
   - Port #1: Dafsa - Established overlay architecture pattern
   - Port #2: ChaosMode - Demonstrated atomic operations and static methods in Rust
-  - Created comprehensive selection and analysis framework
-  - Zero test regressions across both ports
+  - Port #3: XorShift128PlusRNG - Pure computation, JIT integration, bit-exact algorithm
+  - Created comprehensive selection and analysis framework (COMPONENT_SELECTION_REPORT_PORT3.md, COMPONENT_ANALYSIS_XORSHIFT.md)
+  - Zero test regressions across all three ports
+  - All ports maintain upstream compatibility (zero conflicts)
 
 ## Next Steps
 
-1. **Phase 1: Component Selection**
-   - Scan xpcom/ds/ for additional candidates
-   - Score candidates using objective criteria
-   - Select highest-scoring component (≥25/40)
+1. **Phase 1: Component Selection (for Port #4)**
+   - Scan xpcom/ds/ and mfbt/ for additional candidates
+   - Score candidates using objective criteria (≥25/40)
+   - Prioritize components with good test coverage
 
-2. **Phase 2: Implementation**
-   - Port selected component following established pattern
-   - Reuse overlay architecture from Dafsa port
-   - Maintain zero-conflict guarantee
-
-3. **Future Considerations**
-   - Performance benchmarking infrastructure
-   - Automated testing pipeline
+2. **Future Considerations**
+   - Performance benchmarking infrastructure (compare C++ vs Rust)
+   - Automated testing pipeline for continuous validation
    - Integration with Firefox CI
+   - Consider porting related components (e.g., FastBernoulliTrial uses XorShift128+)
