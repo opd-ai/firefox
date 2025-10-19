@@ -1,0 +1,24 @@
+# Ignore build artifacts and generated files in local/
+
+# Rust build artifacts
+rust/target/
+rust/**/target/
+rust/Cargo.lock
+
+# Generated headers
+*.h
+!rust_dafsa.h
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Generated overlay artifacts
+*.local
+*.merged

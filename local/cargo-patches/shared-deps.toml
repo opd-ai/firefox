@@ -1,0 +1,8 @@
+# This file is appended to toolkit/library/rust/shared/Cargo.toml via build script
+# It adds the Rust Dafsa implementation as an optional dependency
+
+[dependencies]
+firefox_dafsa = { path = "../../../../local/rust/firefox_dafsa", optional = true }
+
+[features]
+rust_dafsa = ["firefox_dafsa"]

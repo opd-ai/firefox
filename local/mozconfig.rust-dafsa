@@ -1,0 +1,16 @@
+# Rust Dafsa Overlay Configuration
+# Include this in your mozconfig to enable Rust version of Dafsa
+# 
+# Usage: 
+#   source local/mozconfig.rust-dafsa
+#   ./mach build
+#
+# This is a local file, not tracked upstream
+
+ac_add_options --enable-rust-dafsa
+
+# Note: This sets an environment variable that the build system checks
+export MOZ_RUST_DAFSA=1
+
+echo "Rust Dafsa overlay enabled"
+echo "The Rust implementation of Dafsa will replace the C++ version"

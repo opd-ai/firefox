@@ -1,0 +1,15 @@
+[workspace]
+# Local Rust workspace for downstream Firefox customizations
+# This workspace is separate from the main Firefox Cargo.toml to avoid conflicts
+resolver = "2"
+
+members = [
+    "firefox_dafsa",
+]
+
+# Workspace-wide dependency specifications
+[workspace.dependencies]
+
+[patch.crates-io]
+# Local patches if needed
+# Add any crate patches here that are specific to local components
