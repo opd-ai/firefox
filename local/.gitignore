@@ -3,8 +3,7 @@
 # Rust build artifacts
 rust/target/
 rust/**/target/
-rust/**/*.lock
-Cargo.lock
+rust/Cargo.lock
 
 # Generated headers
 *.h
