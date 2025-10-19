@@ -9,6 +9,7 @@ members = [
     "firefox_xorshift128plus",
     "firefox_hashbytes",
     "firefox_floatingpoint",
+    "firefox_utf8_validator",
 ]
 
 # Workspace-wide dependency specifications
