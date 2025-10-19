@@ -235,3 +235,7 @@ SPHINX_TREES["content-security"] = "docs/content-security"
 SPHINX_TREES["jsloader"] = "docs/jsloader"
 
 include("build/templates.mozbuild")
+
+# Local overlay for downstream customizations
+if os.path.exists(os.path.join(TOPSRCDIR, "local", "local.mozbuild")):
+    include("local/local.mozbuild")
