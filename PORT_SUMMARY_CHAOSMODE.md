@@ -245,9 +245,10 @@ MOZ_RUST_COMPONENTS="chaosmode" ./local/scripts/mach-rust build
 
 1. **AtomicU32 with Relaxed** - Standard pattern for simple counters
 2. **repr(u32) Enums** - Good for constants, but watch FFI transmute
-3. **Libc FFI** - Clean way to call C standard library
-4. **Debug Assertions** - Use debug_assert! for invariant checking
-5. **Integration Tests** - Separate test file for FFI validation
+3. **Raw u32 in FFI for Bit Flags** - **KEY PATTERN**: When dealing with C++ bit flag enums, use raw u32 values in FFI instead of transmuting to Rust enums. This allows arbitrary combinations (e.g., 0x3 = Flag1 | Flag2) that would panic with transmute. Perform bitwise operations on raw values, convert to enums only when needed internally.
+4. **Libc FFI** - Clean way to call C standard library
+5. **Debug Assertions** - Use debug_assert! for invariant checking
+6. **Integration Tests** - Separate test file for FFI validation
 
 ## Documentation Delivered
 

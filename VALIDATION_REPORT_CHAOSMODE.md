@@ -339,17 +339,24 @@ grep firefox_chaosmode toolkit/library/rust/shared/Cargo.toml
 
 ### Memory Safety
 
-**Unsafe Code Blocks**: 3 (all justified and documented)
+**Unsafe Code Blocks**: 6 (all justified and documented)
 
-1. **CHAOS_FEATURES access** (lib.rs:58, ffi.rs:25)
-   - Reason: Static mut for global state
-   - Safety: Only written before threading, atomic read during runtime
+1. **CHAOS_FEATURES writes** (2 blocks: lib.rs:60, ffi.rs:24)
+   - Reason: Static mut for global state initialization
+   - Safety: Only written before threading starts (documented precondition)
+   - Status: ✅ Safe (initialization only)
+
+2. **CHAOS_FEATURES reads** (2 blocks: lib.rs:74, ffi.rs:41)
+   - Reason: Reading static mut global state
+   - Safety: Written once before threading, read-only during runtime
    - Status: ✅ Safe (documented precondition)
 
-2. **libc::rand() calls** (lib.rs:115, lib.rs:133)
+3. **libc::rand() calls** (2 blocks: lib.rs:114, lib.rs:133)
    - Reason: FFI to C standard library
    - Safety: Well-defined C function, no memory issues
    - Status: ✅ Safe (standard library)
+
+**Total**: 6 unsafe blocks in 3 categories (2 writes, 2 reads, 2 FFI calls)
 
 **Memory Leaks**: None (no dynamic allocation)
 
