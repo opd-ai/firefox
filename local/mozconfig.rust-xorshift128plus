@@ -1,0 +1,4 @@
+# Firefox build configuration for Rust XorShift128+ PRNG
+# To use: export MOZ_RUST_XORSHIFT128PLUS=1
+
+ac_add_options --enable-rust-xorshift128plus
