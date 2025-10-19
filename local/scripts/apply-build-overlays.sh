@@ -49,4 +49,21 @@ else
     echo "MOZ_RUST_CHAOSMODE not set, skipping Rust ChaosMode overlay"
 fi
 
+if [ "$MOZ_RUST_XORSHIFT128PLUS" = "1" ]; then
+    echo "Enabling Rust XorShift128+ implementation..."
+    
+    # Append Cargo dependencies (idempotent check)
+    SHARED_CARGO="toolkit/library/rust/shared/Cargo.toml"
+    if ! grep -q "firefox_xorshift128plus" "$SHARED_CARGO" 2>/dev/null; then
+        echo "  Adding firefox_xorshift128plus to $SHARED_CARGO"
+        cat local/cargo-patches/xorshift128plus-deps.toml >> "$SHARED_CARGO"
+    else
+        echo "  firefox_xorshift128plus already present in $SHARED_CARGO"
+    fi
+    
+    echo "Rust XorShift128+ overlay applied successfully"
+else
+    echo "MOZ_RUST_XORSHIFT128PLUS not set, skipping Rust XorShift128+ overlay"
+fi
+
 echo "Done applying overlays"

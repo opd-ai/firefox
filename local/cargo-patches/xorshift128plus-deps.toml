@@ -1,0 +1,4 @@
+# Cargo dependency specifications for XorShift128+ PRNG
+# This file is appended to the main Cargo.toml when the overlay is active
+
+# No external dependencies needed for XorShift128+

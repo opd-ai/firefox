@@ -40,3 +40,20 @@ if CONFIG.get('MOZ_RUST_CHAOSMODE'):
     
     # The actual Rust library will be linked via toolkit/library/rust
     # We just need to ensure the header is available
+
+if CONFIG.get('MOZ_RUST_XORSHIFT128PLUS'):
+    # Generate Rust XorShift128+ header
+    GeneratedFile(
+        'rust_xorshift128plus.h',
+        script='scripts/generate-xorshift128plus-header.py',
+        inputs=[
+            'rust/firefox_xorshift128plus/cbindgen.toml',
+        ],
+    )
+    
+    EXPORTS += [
+        '!rust_xorshift128plus.h',
+    ]
+    
+    # The actual Rust library will be linked via toolkit/library/rust
+    # We just need to ensure the header is available
