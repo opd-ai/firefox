@@ -1,0 +1,14 @@
+[package]
+name = "firefox_dafsa"
+version = "0.1.0"
+edition = "2021"
+authors = ["The Mozilla Project Developers"]
+license = "MPL-2.0"
+description = "Rust implementation of DAFSA (Deterministic Acyclic Finite State Automaton)"
+
+[dependencies]
+# Minimal dependencies to match C++ version
+nsstring = { path = "../../../xpcom/rust/nsstring" }
+
+[lib]
+crate-type = ["staticlib", "rlib"]
