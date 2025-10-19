@@ -1,0 +1,23 @@
+[package]
+name = "firefox_chaosmode"
+version = "0.1.0"
+edition = "2021"
+authors = ["Firefox Developers"]
+license = "MPL-2.0"
+description = "Rust implementation of Firefox ChaosMode for testing infrastructure"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+# For testing
+
+[features]
+default = []
+
+[[test]]
+name = "chaosmode_tests"
+path = "src/tests.rs"

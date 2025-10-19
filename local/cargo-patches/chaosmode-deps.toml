@@ -1,0 +1,5 @@
+# Cargo.toml additions for firefox_chaosmode
+# This file is appended to toolkit/library/rust/shared/Cargo.toml when MOZ_RUST_CHAOSMODE=1
+
+[dependencies]
+firefox_chaosmode = { path = "../../../../local/rust/firefox_chaosmode" }
