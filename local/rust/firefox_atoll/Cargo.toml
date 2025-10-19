@@ -1,0 +1,16 @@
+[package]
+name = "firefox_atoll"
+version = "0.1.0"
+edition = "2021"
+authors = ["Firefox Carcinization Project"]
+license = "MPL-2.0"
+description = "Rust port of nsCRT::atoll - ASCII string to int64 conversion"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+# No external dependencies - pure Rust implementation
+
+[dev-dependencies]
+# No dev dependencies needed for simple tests
