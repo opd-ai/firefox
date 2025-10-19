@@ -1,0 +1,5 @@
+# UTF-8 Validator Cargo dependencies
+# Append to top-level Cargo.toml when --enable-rust-utf8-validator is set
+
+[dependencies.firefox_utf8_validator]
+path = "local/rust/firefox_utf8_validator"

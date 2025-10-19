@@ -1,0 +1,13 @@
+[package]
+name = "firefox_utf8_validator"
+version = "0.1.0"
+authors = ["Firefox Developers"]
+edition = "2021"
+license = "MPL-2.0"
+description = "Rust port of Firefox IsValidUtf8 function for UTF-8 validation"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+# No external dependencies - uses Rust stdlib only
