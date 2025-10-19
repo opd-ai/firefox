@@ -1,0 +1,5 @@
+# Cargo.toml additions for firefox_hashbytes
+# This file is appended to toolkit/library/rust/shared/Cargo.toml when MOZ_RUST_HASHBYTES=1
+
+[dependencies]
+firefox_hashbytes = { path = "../../../../local/rust/firefox_hashbytes" }

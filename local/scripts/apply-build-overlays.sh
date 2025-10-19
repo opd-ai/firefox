@@ -66,4 +66,21 @@ else
     echo "MOZ_RUST_XORSHIFT128PLUS not set, skipping Rust XorShift128+ overlay"
 fi
 
+if [ "$MOZ_RUST_HASHBYTES" = "1" ]; then
+    echo "Enabling Rust HashBytes implementation..."
+    
+    # Append Cargo dependencies (idempotent check)
+    SHARED_CARGO="toolkit/library/rust/shared/Cargo.toml"
+    if ! grep -q "firefox_hashbytes" "$SHARED_CARGO" 2>/dev/null; then
+        echo "  Adding firefox_hashbytes to $SHARED_CARGO"
+        cat local/cargo-patches/hashbytes-deps.toml >> "$SHARED_CARGO"
+    else
+        echo "  firefox_hashbytes already present in $SHARED_CARGO"
+    fi
+    
+    echo "Rust HashBytes overlay applied successfully"
+else
+    echo "MOZ_RUST_HASHBYTES not set, skipping Rust HashBytes overlay"
+fi
+
 echo "Done applying overlays"
