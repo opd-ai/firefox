@@ -165,7 +165,6 @@ UNIFIED_SOURCES += [
     "double-conversion/double-conversion/fixed-dtoa.cc",
     "double-conversion/double-conversion/string-to-double.cc",
     "double-conversion/double-conversion/strtod.cc",
-    "FloatingPoint.cpp",
     "HashFunctions.cpp",
     "JSONWriter.cpp",
     "Poison.cpp",
@@ -177,6 +176,12 @@ UNIFIED_SOURCES += [
     "Unused.cpp",
     "Utf8.cpp",
 ]
+
+# Conditionally add FloatingPoint.cpp (excluded when Rust version is enabled)
+if not CONFIG.get("MOZ_RUST_FLOATINGPOINT"):
+    UNIFIED_SOURCES += [
+        "FloatingPoint.cpp",
+    ]
 
 if CONFIG["MOZ_BUILD_APP"] not in (
     "memory",

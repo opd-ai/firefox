@@ -83,4 +83,21 @@ else
     echo "MOZ_RUST_HASHBYTES not set, skipping Rust HashBytes overlay"
 fi
 
+if [ "$MOZ_RUST_FLOATINGPOINT" = "1" ]; then
+    echo "Enabling Rust FloatingPoint implementation..."
+    
+    # Append Cargo dependencies (idempotent check)
+    SHARED_CARGO="toolkit/library/rust/shared/Cargo.toml"
+    if ! grep -q "firefox_floatingpoint" "$SHARED_CARGO" 2>/dev/null; then
+        echo "  Adding firefox_floatingpoint to $SHARED_CARGO"
+        cat local/cargo-patches/floatingpoint-deps.toml >> "$SHARED_CARGO"
+    else
+        echo "  firefox_floatingpoint already present in $SHARED_CARGO"
+    fi
+    
+    echo "Rust FloatingPoint overlay applied successfully"
+else
+    echo "MOZ_RUST_FLOATINGPOINT not set, skipping Rust FloatingPoint overlay"
+fi
+
 echo "Done applying overlays"

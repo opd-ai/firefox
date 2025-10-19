@@ -1,0 +1,7 @@
+# Cargo patch for firefox_floatingpoint
+#
+# This file defines the Rust dependency that will be appended to the
+# shared Cargo.toml when --enable-rust-floatingpoint is set.
+
+[dependencies.firefox_floatingpoint]
+path = "local/rust/firefox_floatingpoint"
