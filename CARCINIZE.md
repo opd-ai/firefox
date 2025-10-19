@@ -4,19 +4,19 @@
 
 ## Overview
 - **Total C++ Lines**: ~10,000,000 (estimated)
-- **Rust Lines Added**: 2,773
-- **Replacement Progress**: 0.028%
-- **Components Ported**: 5
+- **Rust Lines Added**: 3,670
+- **Replacement Progress**: 0.037%
+- **Components Ported**: 6
 - **Last Updated**: 2025-10-19
 
 ## Porting Statistics
 
 | Metric | Count |
 |--------|-------|
-| Components ported | 5 |
+| Components ported | 6 |
 | C++ lines removed (production) | 521 |
-| C++ test lines (unchanged) | ~500 (estimated) |
-| Rust lines added | 2,773 |
+| C++ test lines (unchanged) | ~1,242 |
+| Rust lines added | 3,670 |
 | Test regressions | 0 |
 | Upstream conflicts | 0 |
 
@@ -157,6 +157,45 @@
   - js/src/jit/MIR.cpp:1432 - Double→float32 representability check
 - **FFI Design**: Single pure function, panic-catching wrapper, exact signature match
 - **Algorithm**: IEEE-754 representability test via round-trip conversion (f64→f32→f64)
+
+### 6. IsValidUtf8 ✅
+- **Date**: 2025-10-19
+- **Location**: mfbt/Utf8.cpp → local/rust/firefox_utf8_validator/
+- **C++ Production Lines Removed**: 0 (conditional compilation via MOZ_RUST_UTF8_VALIDATOR)
+- **C++ Production Lines Modified**: 54 (mfbt/Utf8.cpp - added conditional block)
+- **C++ Test Lines (unchanged)**: 742 (mfbt/tests/TestUtf8.cpp)
+- **Rust Lines Added**: 897 (lib.rs + ffi.rs + tests.rs + README.md + build files)
+- **Test Coverage**: 27 Rust tests + 17 C++ test assertions (100% pass rate)
+- **Tests Ported**: NONE (tests remain in C++, call via FFI)
+- **Selection Score**: 34/40
+  - Simplicity: 8/10 (40 lines, 3 deps, depends on DecodeOneUtf8CodePoint template)
+  - Isolation: 10/10 (1 call site, 3 header deps, no inheritance)
+  - Stability: 10/10 (1 commit/year, very stable)
+  - Testability: 6/10 (comprehensive C++ tests, unit tests only)
+- **Rationale**: IsValidUtf8 is a pure UTF-8 validation function with excellent isolation (only 1 call site), comprehensive test coverage (TestIsUtf8 in TestUtf8.cpp with 17 assertions), and high stability (1 commit/year). The function validates UTF-8 byte sequences for correctness according to RFC 3629. It's a pure computation function with no I/O or platform dependencies, making it ideal for Rust porting. UTF-8 validation is a perfect fit for Rust's safe string handling.
+- **Challenges**:
+  - UTF-8 edge cases: surrogates (U+D800-U+DFFF), overlong encodings, code points beyond U+10FFFF
+  - Performance critical: Used in text processing throughout Firefox
+  - DecodeOneUtf8CodePoint dependency (complex header-only template)
+  - Ensuring byte-exact behavior match with C++ version
+- **Solutions**:
+  - Leveraged Rust's `std::str::from_utf8()` - production-grade, well-tested, highly optimized
+  - May use SIMD instructions on supported platforms (better than C++ version)
+  - Comprehensive test suite: 27 Rust tests + 17 C++ tests via FFI
+  - All UTF-8 edge cases covered: surrogates, overlong, truncated, invalid continuation
+  - Panic-catching FFI wrapper prevents unwinding into C++
+  - Conditional compilation preserves C++ fallback
+- **Performance**: Expected 100-120% (Rust stdlib may be faster due to SIMD optimizations)
+- **Upstream Impact**: Zero conflicts maintained - changes in local/ + conditional in mfbt/Utf8.cpp
+- **Call Sites**: 1 across Firefox codebase
+  - mfbt/Utf8.h:278 - Public API wrapper (IsUtf8 function)
+- **FFI Design**: Single pure function, panic-catching wrapper, null-safe, zero-length-safe
+- **Algorithm**: UTF-8 validation per RFC 3629 (Rust stdlib implementation)
+  - Validates byte patterns (1-4 byte sequences)
+  - Rejects overlong encodings
+  - Rejects surrogates (U+D800-U+DFFF)
+  - Validates code point range (U+0000-U+10FFFF)
+  - Checks complete sequences (no truncation)
 
 ## Components In Progress
 
@@ -316,14 +355,47 @@ Every port must:
   - Built-in type support for standards compliance
   - Inline optimization for performance-critical paths
 
+#### Port #6: IsValidUtf8
+- **What went well**:
+  - Leveraging Rust stdlib (`std::str::from_utf8()`) - simple, correct, fast
+  - Comprehensive test coverage (27 Rust tests supplement 17 C++ tests)
+  - Perfect candidate for Rust (UTF-8 is a Rust strength)
+  - Conditional compilation maintains C++ fallback cleanly
+  - Zero external dependencies (stdlib only)
+  - May be faster than C++ (SIMD optimizations in Rust stdlib)
+- **Challenges**:
+  - UTF-8 edge cases (surrogates, overlong encodings, truncation)
+  - DecodeOneUtf8CodePoint template dependency (complex header-only code)
+  - Performance critical (text processing throughout Firefox)
+  - Ensuring byte-exact behavior match with C++
+- **Solutions**:
+  - Used Rust stdlib instead of porting complex C++ decoder logic
+  - Comprehensive test suite validates all UTF-8 edge cases
+  - Panic-catching FFI wrapper for extra safety
+  - Conditional compilation preserves C++ path for safety
+  - Clear documentation of UTF-8 validation rules (RFC 3629)
+- **FFI Design Patterns**:
+  - Simplest FFI yet: single function, pure computation
+  - Null-safe: Explicit null pointer checks (empty string is valid)
+  - Zero-length-safe: Handle empty input correctly
+  - Panic boundary: Prevent unwinding (though stdlib shouldn't panic)
+  - Uses Rust stdlib for correctness and performance
+- **Reusable patterns**:
+  - Leverage Rust stdlib when available (don't reinvent the wheel)
+  - UTF-8 validation: Use `std::str::from_utf8()` for correctness
+  - Conditional compilation: Preserve C++ fallback for safety
+  - Comprehensive edge case testing (surrogates, overlong, truncation)
+  - Property-based testing (determinism, length preservation)
+  - Trust Rust stdlib for standards compliance (UTF-8, IEEE-754, etc.)
+
 ## Monthly Progress
 
 ### October 2025
-- Components ported: 5 (+1 from previous update)
-- C++ production lines removed: 521 (+42 via conditional build)
-- C++ test lines (unchanged): ~500 (estimated)
-- Rust lines added: 2,773 (+675)
-- Replacement rate: 0.028% (+0.007%)
+- Components ported: 6 (+1 from previous update)
+- C++ production lines removed: 521 (conditional compilation for Port #6)
+- C++ test lines (unchanged): ~1,242 (+742 from TestUtf8.cpp)
+- Rust lines added: 3,670 (+897)
+- Replacement rate: 0.037% (+0.009%)
 - Upstream syncs: 0 (initial implementation)
 - **Highlights**:
   - Port #1: Dafsa - Established overlay architecture pattern
@@ -331,10 +403,12 @@ Every port must:
   - Port #3: XorShift128PlusRNG - Pure computation, JIT integration, bit-exact algorithm
   - Port #4: HashBytes - Pure function, golden ratio hashing, word-by-word optimization
   - Port #5: IsFloat32Representable - Pure math function, IEEE-754 compliance, JIT integration
+  - Port #6: IsValidUtf8 - **Pure UTF-8 validation, Rust stdlib, RFC 3629 compliance**
   - Created comprehensive selection and analysis framework
-  - Zero test regressions across all five ports
+  - Zero test regressions across all six ports
   - All ports maintain upstream compatibility (zero conflicts)
   - Established reusable patterns for FFI safety and panic handling
+  - Demonstrated leveraging Rust stdlib for correctness and performance
 
 ## Next Steps
 
@@ -359,9 +433,9 @@ Every port must:
 
 ## Summary
 
-**Progress to Date**: 5 components successfully ported to Rust
-- **Total C++ removed**: 521 lines (production code only)
-- **Total Rust added**: 2,773 lines (including tests, docs, build config)
+**Progress to Date**: 6 components successfully ported to Rust
+- **Total C++ removed**: 521 lines (production code, conditional compilation)
+- **Total Rust added**: 3,670 lines (including tests, docs, build config)
 - **Test regressions**: 0 (perfect compatibility maintained)
 - **Upstream conflicts**: 0 (overlay architecture working as designed)
 - **Success rate**: 100% (all ports completed successfully)
@@ -379,20 +453,21 @@ Every port must:
 - Port #3 (XorShift128+): 122 C++ lines → 833 Rust lines (PRNG algorithm)
 - Port #4 (HashBytes): 38 C++ lines → 575 Rust lines (pure function)
 - Port #5 (IsFloat32): 42 C++ lines → 675 Rust lines (pure math function)
+- Port #6 (IsValidUtf8): 40 C++ lines → 897 Rust lines (UTF-8 validation)
 
 **Average Port Metrics**:
-- C++ lines per port: ~104 lines
-- Rust lines per port: ~555 lines (includes tests + docs)
-- Line expansion ratio: ~5.3x (due to comprehensive testing and documentation)
+- C++ lines per port: ~94 lines
+- Rust lines per port: ~612 lines (includes tests + docs)
+- Line expansion ratio: ~6.5x (due to comprehensive testing and documentation)
 - Test coverage: 100% (all existing tests pass, new tests added)
 
 **Next Port Target**: To be determined via Phase 1 selection process
-- Focus areas: xpcom/ds/ utilities, mfbt/ functions
+- Focus areas: xpcom/ds/ utilities, mfbt/ functions, simple algorithms
 - Target score: ≥25/40 (maintain quality threshold)
 - Estimated effort: 2-4 hours per port (established patterns)
 
 ---
 
 *Last updated: 2025-10-19*  
-*Total ports completed: 5/∞*  
+*Total ports completed: 6/∞*  
 *Firefox Carcinization: In Progress* 🦀
