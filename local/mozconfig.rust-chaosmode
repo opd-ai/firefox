@@ -1,0 +1,11 @@
+# Configuration to enable Rust ChaosMode implementation
+# Source this file before building Firefox to use the Rust version
+
+# Enable Rust ChaosMode
+export MOZ_RUST_CHAOSMODE=1
+
+# Apply build overlays
+echo "Applying Rust ChaosMode build overlays..."
+bash "$(dirname "${BASH_SOURCE[0]}")/scripts/apply-build-overlays.sh"
+
+echo "Rust ChaosMode enabled. Run './mach build' to compile."

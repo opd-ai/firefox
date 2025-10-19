@@ -23,3 +23,20 @@ if CONFIG.get('MOZ_RUST_DAFSA'):
     
     # The actual Rust library will be linked via toolkit/library/rust
     # We just need to ensure the header is available
+
+if CONFIG.get('MOZ_RUST_CHAOSMODE'):
+    # Generate Rust ChaosMode header
+    GeneratedFile(
+        'rust_chaosmode.h',
+        script='scripts/generate-chaosmode-header.py',
+        inputs=[
+            'rust/firefox_chaosmode/cbindgen.toml',
+        ],
+    )
+    
+    EXPORTS += [
+        '!rust_chaosmode.h',
+    ]
+    
+    # The actual Rust library will be linked via toolkit/library/rust
+    # We just need to ensure the header is available

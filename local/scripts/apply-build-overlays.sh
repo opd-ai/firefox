@@ -32,4 +32,21 @@ else
     echo "MOZ_RUST_DAFSA not set, skipping Rust Dafsa overlay"
 fi
 
+if [ "$MOZ_RUST_CHAOSMODE" = "1" ]; then
+    echo "Enabling Rust ChaosMode implementation..."
+    
+    # Append Cargo dependencies (idempotent check)
+    SHARED_CARGO="toolkit/library/rust/shared/Cargo.toml"
+    if ! grep -q "firefox_chaosmode" "$SHARED_CARGO" 2>/dev/null; then
+        echo "  Adding firefox_chaosmode to $SHARED_CARGO"
+        cat local/cargo-patches/chaosmode-deps.toml >> "$SHARED_CARGO"
+    else
+        echo "  firefox_chaosmode already present in $SHARED_CARGO"
+    fi
+    
+    echo "Rust ChaosMode overlay applied successfully"
+else
+    echo "MOZ_RUST_CHAOSMODE not set, skipping Rust ChaosMode overlay"
+fi
+
 echo "Done applying overlays"

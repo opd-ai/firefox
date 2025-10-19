@@ -5,14 +5,34 @@
 
 # Wrapper for mach that applies overlays first
 # Usage: ./local/scripts/mach-rust <mach-command>
+# 
+# Set MOZ_RUST_COMPONENTS to control which components are enabled:
+#   MOZ_RUST_COMPONENTS="dafsa chaosmode" ./local/scripts/mach-rust build
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 cd "$REPO_ROOT"
 
-# Enable Rust Dafsa
-export MOZ_RUST_DAFSA=1
+# Enable Rust components based on MOZ_RUST_COMPONENTS or default to dafsa
+if [ -n "$MOZ_RUST_COMPONENTS" ]; then
+    for component in $MOZ_RUST_COMPONENTS; do
+        case "$component" in
+            dafsa)
+                export MOZ_RUST_DAFSA=1
+                ;;
+            chaosmode)
+                export MOZ_RUST_CHAOSMODE=1
+                ;;
+            *)
+                echo "Warning: Unknown component '$component'" >&2
+                ;;
+        esac
+    done
+else
+    # Default: enable Dafsa only
+    export MOZ_RUST_DAFSA=1
+fi
 
 # Apply overlays
 source local/scripts/apply-build-overlays.sh
