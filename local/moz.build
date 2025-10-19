@@ -57,3 +57,21 @@ if CONFIG.get('MOZ_RUST_XORSHIFT128PLUS'):
     
     # The actual Rust library will be linked via toolkit/library/rust
     # We just need to ensure the header is available
+
+if CONFIG.get('MOZ_RUST_HASHBYTES'):
+    # Generate Rust HashBytes header
+    GeneratedFile(
+        'rust_hashbytes.h',
+        script='scripts/generate-hashbytes-header.py',
+        inputs=[
+            'rust/firefox_hashbytes/cbindgen.toml',
+        ],
+    )
+    
+    EXPORTS += [
+        '!rust_hashbytes.h',
+    ]
+    
+    # The actual Rust library will be linked via toolkit/library/rust
+    # We just need to ensure the header is available
+

@@ -1,0 +1,7 @@
+# mozconfig for enabling Rust HashBytes implementation
+# Source this file to use the Rust port instead of C++
+
+ac_add_options --enable-rust-hashbytes
+
+# This enables the MOZ_RUST_HASHBYTES config variable
+# which triggers the build overlay in local/moz.build
