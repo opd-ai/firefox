@@ -92,3 +92,20 @@ if CONFIG.get('MOZ_RUST_FLOATINGPOINT'):
     # The actual Rust library will be linked via toolkit/library/rust
     # We just need to ensure the header is available
 
+if CONFIG.get('MOZ_RUST_UTF8_VALIDATOR'):
+    # Generate Rust UTF-8 Validator header
+    GeneratedFile(
+        'rust_utf8_validator.h',
+        script='scripts/generate-utf8-validator-header.py',
+        inputs=[
+            'rust/firefox_utf8_validator/cbindgen.toml',
+        ],
+    )
+    
+    EXPORTS += [
+        '!rust_utf8_validator.h',
+    ]
+    
+    # The actual Rust library will be linked via toolkit/library/rust
+    # We just need to ensure the header is available
+

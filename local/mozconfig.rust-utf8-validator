@@ -1,0 +1,4 @@
+# Firefox configuration for building with Rust UTF-8 Validator
+# This replaces the C++ implementation with the Rust version at compile time
+
+ac_add_options --enable-rust-utf8-validator

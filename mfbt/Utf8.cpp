@@ -14,6 +14,19 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef MOZ_RUST_UTF8_VALIDATOR
+// Use Rust implementation
+extern "C" {
+bool IsValidUtf8_RUST(const uint8_t* aCodeUnits, size_t aCount);
+}
+
+MFBT_API bool mozilla::detail::IsValidUtf8(const void* aCodeUnits,
+                                           size_t aCount) {
+  return IsValidUtf8_RUST(reinterpret_cast<const uint8_t*>(aCodeUnits), aCount);
+}
+
+#else
+// Original C++ implementation
 MFBT_API bool mozilla::detail::IsValidUtf8(const void* aCodeUnits,
                                            size_t aCount) {
   const auto* s = reinterpret_cast<const unsigned char*>(aCodeUnits);
@@ -38,3 +51,5 @@ MFBT_API bool mozilla::detail::IsValidUtf8(const void* aCodeUnits,
   MOZ_ASSERT(s == limit);
   return true;
 }
+#endif // MOZ_RUST_UTF8_VALIDATOR
+

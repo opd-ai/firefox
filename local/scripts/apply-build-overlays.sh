@@ -100,4 +100,21 @@ else
     echo "MOZ_RUST_FLOATINGPOINT not set, skipping Rust FloatingPoint overlay"
 fi
 
+if [ "$MOZ_RUST_UTF8_VALIDATOR" = "1" ]; then
+    echo "Enabling Rust UTF-8 Validator implementation..."
+    
+    # Append Cargo dependencies (idempotent check)
+    SHARED_CARGO="toolkit/library/rust/shared/Cargo.toml"
+    if ! grep -q "firefox_utf8_validator" "$SHARED_CARGO" 2>/dev/null; then
+        echo "  Adding firefox_utf8_validator to $SHARED_CARGO"
+        cat local/cargo-patches/utf8-validator-deps.toml >> "$SHARED_CARGO"
+    else
+        echo "  firefox_utf8_validator already present in $SHARED_CARGO"
+    fi
+    
+    echo "Rust UTF-8 Validator overlay applied successfully"
+else
+    echo "MOZ_RUST_UTF8_VALIDATOR not set, skipping Rust UTF-8 Validator overlay"
+fi
+
 echo "Done applying overlays"
