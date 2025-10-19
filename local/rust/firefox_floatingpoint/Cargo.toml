@@ -1,0 +1,16 @@
+[package]
+name = "firefox_floatingpoint"
+version = "0.1.0"
+authors = ["Firefox Developers"]
+edition = "2021"
+license = "MPL-2.0"
+description = "Rust port of Firefox IsFloat32Representable function (mfbt/FloatingPoint.cpp)"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+# No external dependencies needed - std library only
+
+[dev-dependencies]
+# For additional testing if needed

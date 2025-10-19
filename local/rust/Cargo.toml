@@ -8,6 +8,7 @@ members = [
     "firefox_chaosmode",
     "firefox_xorshift128plus",
     "firefox_hashbytes",
+    "firefox_floatingpoint",
 ]
 
 # Workspace-wide dependency specifications
