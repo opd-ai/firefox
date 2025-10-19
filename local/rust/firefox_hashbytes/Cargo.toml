@@ -1,0 +1,14 @@
+[package]
+name = "firefox_hashbytes"
+version = "0.1.0"
+authors = ["Firefox Developers"]
+edition = "2021"
+license = "MPL-2.0"
+description = "Rust port of Firefox's HashBytes function from mfbt/HashFunctions.cpp"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+
+[dev-dependencies]
