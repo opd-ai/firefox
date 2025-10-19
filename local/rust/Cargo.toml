@@ -6,6 +6,7 @@ resolver = "2"
 members = [
     "firefox_dafsa",
     "firefox_chaosmode",
+    "firefox_xorshift128plus",
 ]
 
 # Workspace-wide dependency specifications
