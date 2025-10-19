@@ -1,0 +1,16 @@
+# Mozconfig for building Firefox with Rust FloatingPoint implementation
+#
+# This configuration enables the Rust version of IsFloat32Representable
+# instead of the C++ version from mfbt/FloatingPoint.cpp.
+#
+# Usage:
+#   export MOZCONFIG=/path/to/firefox/local/mozconfig.rust-floatingpoint
+#   ./mach build
+
+# Enable the Rust FloatingPoint implementation
+ac_add_options --enable-rust-floatingpoint
+
+# This will:
+# - Remove mfbt/FloatingPoint.cpp from the build
+# - Add local/rust/firefox_floatingpoint to Rust compilation
+# - Link the Rust implementation via FFI

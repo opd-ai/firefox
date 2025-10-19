@@ -75,3 +75,20 @@ if CONFIG.get('MOZ_RUST_HASHBYTES'):
     # The actual Rust library will be linked via toolkit/library/rust
     # We just need to ensure the header is available
 
+if CONFIG.get('MOZ_RUST_FLOATINGPOINT'):
+    # Generate Rust FloatingPoint header
+    GeneratedFile(
+        'rust_floatingpoint.h',
+        script='scripts/generate-floatingpoint-header.py',
+        inputs=[
+            'rust/firefox_floatingpoint/cbindgen.toml',
+        ],
+    )
+    
+    EXPORTS += [
+        '!rust_floatingpoint.h',
+    ]
+    
+    # The actual Rust library will be linked via toolkit/library/rust
+    # We just need to ensure the header is available
+

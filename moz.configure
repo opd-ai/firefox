@@ -969,6 +969,15 @@ def remaining_mozconfig_options(_):
             helper.handle(option)
 
 
+# Local Rust component options (downstream customization)
+option(
+    "--enable-rust-floatingpoint",
+    help="Use Rust implementation of IsFloat32Representable instead of C++",
+)
+
+set_config("MOZ_RUST_FLOATINGPOINT", depends("--enable-rust-floatingpoint")(lambda x: x))
+
+
 @depends(build_environment, configure_cache)
 @imports(_import="json")
 @imports(_from="pathlib", _import="Path")
