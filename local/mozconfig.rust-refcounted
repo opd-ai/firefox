@@ -1,0 +1,4 @@
+# Build configuration for Rust port of RefCounted.cpp
+# Usage: export MOZCONFIG=local/mozconfig.rust-refcounted && ./mach build
+
+ac_add_options --enable-rust-refcounted
