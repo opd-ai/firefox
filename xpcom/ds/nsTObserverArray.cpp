@@ -6,6 +6,25 @@
 
 #include "nsTObserverArray.h"
 
+#ifdef MOZ_RUST_OBSERVER_ARRAY
+// Use Rust implementation
+extern "C" {
+void nsTObserverArray_base_AdjustIterators(void* aThis, size_t aModPos,
+                                           ptrdiff_t aAdjustment);
+void nsTObserverArray_base_ClearIterators(void* aThis);
+}
+
+void nsTObserverArray_base::AdjustIterators(index_type aModPos,
+                                            diff_type aAdjustment) {
+  nsTObserverArray_base_AdjustIterators(this, aModPos, aAdjustment);
+}
+
+void nsTObserverArray_base::ClearIterators() {
+  nsTObserverArray_base_ClearIterators(this);
+}
+
+#else
+// Original C++ implementation
 void nsTObserverArray_base::AdjustIterators(index_type aModPos,
                                             diff_type aAdjustment) {
   MOZ_ASSERT(aAdjustment == -1 || aAdjustment == 1, "invalid adjustment");
@@ -25,3 +44,4 @@ void nsTObserverArray_base::ClearIterators() {
     iter = iter->mNext;
   }
 }
+#endif  // MOZ_RUST_OBSERVER_ARRAY

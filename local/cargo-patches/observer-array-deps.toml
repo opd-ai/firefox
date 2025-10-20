@@ -1,0 +1,5 @@
+# Cargo.toml additions for firefox_observer_array
+# This file is appended to toolkit/library/rust/shared/Cargo.toml when MOZ_RUST_OBSERVER_ARRAY=1
+
+[dependencies]
+firefox_observer_array = { path = "../../../../local/rust/firefox_observer_array" }

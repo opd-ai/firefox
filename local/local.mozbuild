@@ -7,5 +7,6 @@
 # Local build overlays - included by top-level moz.build
 # This file enables downstream customizations without modifying upstream files
 
-if CONFIG.get('MOZ_RUST_DAFSA'):
+if (CONFIG.get('MOZ_RUST_DAFSA') or
+    CONFIG.get('MOZ_RUST_OBSERVER_ARRAY')):
     DIRS += ['local']
