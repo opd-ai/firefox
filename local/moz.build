@@ -211,3 +211,20 @@ if CONFIG.get('MOZ_RUST_ARRAYUTILS'):
     # The actual Rust library will be linked via toolkit/library/rust
     # We just need to ensure the header is available
 
+if CONFIG.get('MOZ_RUST_UNUSED'):
+    # Generate Rust Unused header
+    GeneratedFile(
+        'rust_unused.h',
+        script='scripts/generate-unused-header.py',
+        inputs=[
+            'rust/firefox_unused/cbindgen.toml',
+        ],
+    )
+    
+    EXPORTS += [
+        '!rust_unused.h',
+    ]
+    
+    # The actual Rust library will be linked via toolkit/library/rust
+    # We just need to ensure the header is available
+
