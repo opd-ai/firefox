@@ -1,0 +1,2 @@
+# mozconfig for building with Rust unused port
+ac_add_options --enable-rust-unused

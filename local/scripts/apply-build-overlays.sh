@@ -168,4 +168,21 @@ else
     echo "MOZ_RUST_ARRAYUTILS not set, skipping Rust ArrayUtils overlay"
 fi
 
+if [ "$MOZ_RUST_UNUSED" = "1" ]; then
+    echo "Enabling Rust Unused implementation..."
+    
+    # Append Cargo dependencies (idempotent check)
+    SHARED_CARGO="toolkit/library/rust/shared/Cargo.toml"
+    if ! grep -q "firefox_unused" "$SHARED_CARGO" 2>/dev/null; then
+        echo "  Adding firefox_unused to $SHARED_CARGO"
+        cat local/cargo-patches/unused-deps.toml >> "$SHARED_CARGO"
+    else
+        echo "  firefox_unused already present in $SHARED_CARGO"
+    fi
+    
+    echo "Rust Unused overlay applied successfully"
+else
+    echo "MOZ_RUST_UNUSED not set, skipping Rust Unused overlay"
+fi
+
 echo "Done applying overlays"

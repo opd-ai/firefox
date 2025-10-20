@@ -1,0 +1,6 @@
+# Cargo dependency patch for firefox_unused
+# This file defines dependencies for the unused Rust port
+# It will be appended to the main Cargo.toml when MOZ_RUST_UNUSED is enabled
+
+[dependencies.firefox_unused]
+path = "local/rust/firefox_unused"
