@@ -1,0 +1,13 @@
+[package]
+name = "firefox_unused"
+version = "0.1.0"
+edition = "2021"
+authors = ["Firefox Developers"]
+license = "MPL-2.0"
+description = "Rust port of mozilla::Unused for suppressing unused value warnings"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+# No external dependencies needed - pure static const export

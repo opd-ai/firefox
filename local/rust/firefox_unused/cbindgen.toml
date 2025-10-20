@@ -1,0 +1,33 @@
+# cbindgen configuration for firefox_unused
+
+language = "C++"
+cpp_compat = true
+pragma_once = true
+include_version = true
+namespace = "mozilla"
+namespaces = ["mozilla"]
+
+[export]
+include = ["UnusedT"]
+
+[export.rename]
+"UnusedT" = "unused_t"
+
+[layout]
+packed = false
+aligned_n = 1
+
+# Generate appropriate includes
+after_includes = """
+// Ensure compatibility with existing Unused.h
+#ifdef MOZ_RUST_UNUSED
+namespace mozilla {
+// Import Rust-exported static
+extern "C" {
+  extern const unused_t mozilla_Unused;
+}
+// Make it available as mozilla::Unused
+static const unused_t& Unused = mozilla_Unused;
+}
+#endif
+"""
