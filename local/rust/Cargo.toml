@@ -17,6 +17,7 @@ members = [
     "firefox_tarray",
     "firefox_arrayutils",
     "firefox_unused",
+    "firefox_refcounted",
 ]
 
 # Workspace-wide dependency specifications

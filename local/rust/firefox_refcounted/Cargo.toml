@@ -1,0 +1,19 @@
+[package]
+name = "firefox_refcounted"
+version = "0.1.0"
+authors = ["Firefox Developers"]
+edition = "2021"
+license = "MPL-2.0"
+description = "Rust port of mfbt/RefCounted.cpp - RefCount leak checking infrastructure"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+
+[features]
+default = []
+# Enable refcount leak checking (corresponds to MOZ_REFCOUNTED_LEAK_CHECKING)
+leak-checking = []
+
+[build-dependencies]
