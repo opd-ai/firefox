@@ -109,3 +109,20 @@ if CONFIG.get('MOZ_RUST_UTF8_VALIDATOR'):
     # The actual Rust library will be linked via toolkit/library/rust
     # We just need to ensure the header is available
 
+if CONFIG.get('MOZ_RUST_JSONWRITER'):
+    # Generate Rust JSONWriter header
+    GeneratedFile(
+        'rust_jsonwriter.h',
+        script='scripts/generate-jsonwriter-header.py',
+        inputs=[
+            'rust/firefox_jsonwriter/cbindgen.toml',
+        ],
+    )
+    
+    EXPORTS += [
+        '!rust_jsonwriter.h',
+    ]
+    
+    # The actual Rust library will be linked via toolkit/library/rust
+    # We just need to ensure the header is available
+

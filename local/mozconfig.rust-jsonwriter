@@ -1,0 +1,10 @@
+# Build configuration for Rust JSONWriter port
+# Enables the Rust implementation of gTwoCharEscapes lookup table
+
+ac_add_options --enable-rust-jsonwriter
+
+# This flag will conditionally compile the Rust version of:
+# - mfbt/JSONWriter.cpp (gTwoCharEscapes table)
+#
+# C++ tests remain unchanged (mfbt/tests/TestJSONWriter.cpp)
+# and will call the Rust implementation via FFI.
