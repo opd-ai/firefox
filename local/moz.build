@@ -143,3 +143,20 @@ if CONFIG.get('MOZ_RUST_OBSERVER_ARRAY'):
     # The actual Rust library will be linked via toolkit/library/rust
     # We just need to ensure the header is available
 
+if CONFIG.get('MOZ_RUST_NSCRT'):
+    # Generate Rust nsCRT header
+    GeneratedFile(
+        'rust_nscrt.h',
+        script='scripts/generate-nscrt-header.py',
+        inputs=[
+            'rust/firefox_nscrt/cbindgen.toml',
+        ],
+    )
+    
+    EXPORTS += [
+        '!rust_nscrt.h',
+    ]
+    
+    # The actual Rust library will be linked via toolkit/library/rust
+    # We just need to ensure the header is available
+

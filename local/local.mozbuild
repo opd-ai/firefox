@@ -8,5 +8,6 @@
 # This file enables downstream customizations without modifying upstream files
 
 if (CONFIG.get('MOZ_RUST_DAFSA') or
-    CONFIG.get('MOZ_RUST_OBSERVER_ARRAY')):
+    CONFIG.get('MOZ_RUST_OBSERVER_ARRAY') or
+    CONFIG.get('MOZ_RUST_NSCRT')):
     DIRS += ['local']

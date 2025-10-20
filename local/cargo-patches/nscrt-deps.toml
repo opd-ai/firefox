@@ -1,0 +1,5 @@
+# Cargo.toml additions for firefox_nscrt
+# This file is appended to toolkit/library/rust/shared/Cargo.toml when MOZ_RUST_NSCRT=1
+
+[dependencies]
+firefox_nscrt = { path = "../../../../local/rust/firefox_nscrt" }

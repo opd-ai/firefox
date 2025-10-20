@@ -4,19 +4,19 @@
 
 ## Overview
 - **Total C++ Lines**: ~10,000,000 (estimated)
-- **Rust Lines Added**: 5,163
-- **Replacement Progress**: 0.052%
-- **Components Ported**: 8
-- **Last Updated**: 2025-10-19
+- **Rust Lines Added**: 5,763
+- **Replacement Progress**: 0.058%
+- **Components Ported**: 9
+- **Last Updated**: 2025-10-20
 
 ## Porting Statistics
 
 | Metric | Count |
 |--------|-------|
-| Components ported | 8 |
-| C++ lines removed (production) | 548 |
+| Components ported | 9 |
+| C++ lines removed (production) | 671 |
 | C++ test lines (unchanged) | ~2,480 |
-| Rust lines added | 5,163 |
+| Rust lines added | 5,763 |
 | Test regressions | 0 |
 | Upstream conflicts | 0 |
 
@@ -281,32 +281,52 @@
     - Removal (-1): Decrement positions after removal point
   - **ClearIterators**: Walk iterator linked list, reset all positions to 0
   - Maintains iterator validity during concurrent array modifications
-  - Simplicity: 10/10 (47 lines, static data only, no platform code)
-  - Isolation: 7/10 (Used only in JSONWriter.h, 5 uses, minimal deps)
-  - Stability: 10/10 (1 commit/year, very stable)
-  - Testability: 4/10 (Indirectly tested via TestJSONWriter.cpp)
-- **Rationale**: gTwoCharEscapes is a 256-byte lookup table mapping ASCII characters to their JSON two-character escape sequences (per RFC 4627). Pure const data with no logic, perfect for demonstrating static data export via FFI. The table maps 7 characters (\b, \t, \n, \f, \r, ", \) to their escape sequences, while all other entries are zero. Used by JSONWriter.h for JSON string escaping in memory reporting, profiler output, and JSON generation throughout Firefox.
+
+### 9. nsCRT Functions ✅
+- **Date**: 2025-10-20
+- **Location**: xpcom/ds/nsCRT.cpp → local/rust/firefox_nscrt/
+- **C++ Production Lines Removed**: 0 (conditional compilation via MOZ_RUST_NSCRT)
+- **C++ Production Lines Modified**: 123 → 147 (added conditional compilation wrapper)
+- **C++ Test Lines (unchanged)**: 0 (no dedicated C++ tests)
+- **Rust Lines Added**: 600 (lib.rs + ffi.rs + README.md + build files)
+- **Test Coverage**: 18 Rust tests (100% pass rate) - no C++ tests exist
+- **Tests Ported**: NONE (no C++ tests exist, created comprehensive Rust test suite)
+- **Selection Score**: 33/40
+  - Simplicity: 10/10 (123 lines, 2 dependencies, no platform code)
+  - Isolation: 9/10 (15-40 call sites, 3 header deps, no inheritance)
+  - Stability: 10/10 (1 commit/year, 0 bugs, stable >2yr)
+  - Testability: 4/10 (no dedicated C++ tests - created comprehensive Rust tests)
+- **Rationale**: nsCRT.cpp implements three pure string/number utility functions with exceptional simplicity (123 lines, 2 deps, no platform code) and stability (1 commit/year). The functions are well-isolated with clear semantics: strtok (thread-safe tokenizer), strcmp(char16_t*) (UTF-16 comparison), and atoll (string to int64 conversion). Perfect for demonstrating Rust's string handling, UTF-16 support, and integer parsing while maintaining zero-cost abstractions.
 - **Challenges**:
-  - Header-only template code in JSONWriter.h (545 lines, not ported)
-  - Maintaining byte-for-byte identical memory layout for C++ access
-  - Ensuring cbindgen generates correct C++ bindings
-  - Table accessed directly via array indexing from C++ header code
+  - No dedicated C++ tests (need comprehensive Rust test creation)
+  - strtok modifies input in-place (destructive, requires unsafe Rust)
+  - char16_t* handling requires UTF-16 support
+  - Matching C++ null pointer semantics exactly
+  - Bitmap lookup table for delimiter checking
 - **Solutions**:
-  - Port only the .cpp file (lookup table), not the complex header
-  - Use implicit `#[repr(C)]` via `[i8; 256]` for memory layout
-  - Comprehensive compile-time assertions (size == 256 bytes)
-  - Dual FFI exports: `mozilla_detail_gTwoCharEscapes` (C linkage) and `gTwoCharEscapes` (C++ namespace)
-  - 16 comprehensive Rust tests validate table correctness
+  - Created comprehensive Rust test suite (18 tests: 6 strtok, 6 strcmp, 6 atoll)
+  - Documented strtok's destructive behavior clearly
+  - Used Rust's u16 type (= char16_t) for UTF-16
+  - Matched C++ null handling exactly (both null = 0, one null = -1/1)
+  - Implemented bitmap algorithm identically to C++
+  - FFI layer with panic boundaries for all functions
   - Conditional compilation preserves C++ fallback
-- **Performance**: Expected 100-102% (identical memory layout, same array indexing, 256-byte table fits in L1 cache)
-- **Upstream Impact**: Zero conflicts maintained - changes in local/ + conditional in mfbt/JSONWriter.cpp
-- **Call Sites**: 4 uses in JSONWriter.h (extern declaration, two escape checks, one escape character retrieval)
-- **FFI Design**: Dual static array exports, panic-free, read-only data, 'static lifetime
-- **Algorithm**: JSON escape lookup per RFC 4627
-  - Maps characters to two-char escape sequences: \b, \t, \n, \f, \r, \", \\
-  - Zero values indicate no two-char escape (use \uXXXX for other control chars)
-  - Used in EscapedString class for JSON string generation
-  - Thread-safe (const data, read-only access)
+- **Performance**: Expected 95-105% (identical algorithms, same complexity)
+- **Upstream Impact**: Zero conflicts maintained - conditional compilation in nsCRT.cpp + all changes in local/
+- **Call Sites**: ~15-40 across Firefox codebase:
+  - **strtok**: 14 call sites (dom/events/KeyEventHandler, image/encoders/png/nsPNGEncoder, netwerk/protocol/http/HttpBaseChannel, netwerk/protocol/websocket/WebSocketChannel, xpcom/components/ManifestParser)
+  - **strcmp(char16_t*)**: ~20-40 call sites (observer topics, event types, configuration checking)
+  - **atoll**: 1 call site
+- **FFI Design**: Three functions exposed via FFI with panic boundaries:
+  - nsCRT_strtok(char*, const char*, char**) → char*
+  - nsCRT_strcmp_char16(const char16_t*, const char16_t*) → int32_t
+  - nsCRT_atoll(const char*) → int64_t
+  - Null-safe, panic-catching wrappers
+  - Direct signature match with C++ methods
+- **Algorithms**:
+  - **strtok**: Bitmap delimiter lookup (32 bytes, 256 bits, O(1) check), skip leading delimiters, replace delimiter with '\0', return token
+  - **strcmp(char16_t*)**: Null handling, character-by-character comparison, return -1/0/1
+  - **atoll**: Null check, digit-by-digit parsing (result = result * 10 + digit), stop at non-digit
 
 ## Components In Progress
 
@@ -569,14 +589,49 @@ Every port must:
   - Pure pointer manipulation (no allocation, no ownership transfer)
   - Template header + Rust .cpp pattern (complex logic stays in C++, simple methods ported)
 
+#### Port #9: nsCRT Functions
+- **What went well**:
+  - Simplest pure functions yet - string utilities with clear semantics
+  - Bitmap lookup table algorithm maps directly to Rust
+  - UTF-16 support built into Rust (u16 = char16_t)
+  - Created comprehensive test suite from scratch (18 tests)
+  - Zero external dependencies (stdlib only)
+  - All three functions extremely straightforward
+- **Challenges**:
+  - No dedicated C++ tests existed (had to create comprehensive test suite)
+  - strtok modifies input in-place (destructive, requires unsafe Rust)
+  - char16_t* null pointer handling must match C++ exactly
+  - Bitmap delimiter table needed careful bit manipulation
+- **Solutions**:
+  - Created 18 comprehensive Rust tests (6 per function)
+  - Used unsafe Rust with clear safety documentation
+  - Matched C++ null semantics exactly (both null = 0, one null = -1/1)
+  - Implemented bitmap with bit shift operators (>> 3, & 7)
+  - Panic-catching FFI for all three functions
+  - Clear documentation of destructive strtok behavior
+- **FFI Design Patterns**:
+  - Three simple function exports (no complex types)
+  - Null-safe: Explicit null checks for all pointer parameters
+  - Panic boundaries: catch_unwind prevents unwinding
+  - Direct signature match: C++ → Rust type mapping
+  - No ownership transfer (read-only or modify-in-place)
+- **Reusable patterns**:
+  - Bitmap lookup table for character classification
+  - Null-terminated string iteration in unsafe Rust
+  - UTF-16 string handling (encode_utf16() + u16 slices)
+  - Wrapping arithmetic for overflow behavior
+  - In-place string modification (strtok)
+  - Comprehensive edge case testing (null, empty, edge values)
+  - Creating tests when none exist (test-driven porting)
+
 ## Monthly Progress
 
 ### October 2025
-- Components ported: 8 (+1 from previous update)
-- C++ production lines removed: 548 (conditional compilation)
-- C++ test lines (unchanged): ~2,480 (+573 from TestObserverArray.cpp)
-- Rust lines added: 5,163 (+747)
-- Replacement rate: 0.052% (+0.008%)
+- Components ported: 9 (+1 from previous update)
+- C++ production lines removed: 671 (conditional compilation)
+- C++ test lines (unchanged): ~2,480
+- Rust lines added: 5,763 (+600)
+- Replacement rate: 0.058% (+0.006%)
 - Upstream syncs: 0 (initial implementation)
 - **Highlights**:
   - Port #1: Dafsa - Established overlay architecture pattern
@@ -586,23 +641,25 @@ Every port must:
   - Port #5: IsFloat32Representable - Pure math function, IEEE-754 compliance, JIT integration
   - Port #6: IsValidUtf8 - Pure UTF-8 validation, Rust stdlib, RFC 3629 compliance
   - Port #7: JSONWriter (gTwoCharEscapes) - Pure data structure, static const array, RFC 4627 compliance
-  - Port #8: nsTObserverArray_base - **Smallest port (27 lines), highest test coverage (573+23 tests), linked list traversal**
+  - Port #8: nsTObserverArray_base - Smallest port (27 lines), highest test coverage (573+23 tests), linked list traversal
+  - Port #9: nsCRT Functions - **String utilities (strtok, strcmp, atoll), UTF-16 support, bitmap lookup, test creation from scratch**
   - Created comprehensive selection and analysis framework
-  - Zero test regressions across all eight ports
+  - Zero test regressions across all nine ports
   - All ports maintain upstream compatibility (zero conflicts)
   - Established reusable patterns for FFI safety and panic handling
   - Demonstrated leveraging Rust stdlib for correctness and performance
   - Demonstrated static data export via FFI
   - Demonstrated safe raw pointer manipulation for linked list traversal
+  - Demonstrated creating comprehensive tests when none exist
 
 ## Next Steps
 
-1. **Phase 1: Component Selection (for Port #6)**
+1. **Phase 1: Component Selection (for Port #10)**
    - Scan xpcom/ds/, xpcom/string/, and mfbt/ for additional candidates
    - Score candidates using objective criteria (≥25/40)
    - Prioritize components with good test coverage
    - Consider related utilities or data structures
-   - **Port #5 Complete**: IsFloat32Representable successfully ported ✅
+   - **Port #9 Complete**: nsCRT Functions successfully ported ✅
 
 2. **Future Considerations**
    - Performance benchmarking infrastructure (compare C++ vs Rust)
@@ -618,9 +675,9 @@ Every port must:
 
 ## Summary
 
-**Progress to Date**: 8 components successfully ported to Rust
-- **Total C++ removed**: 548 lines (production code, conditional compilation)
-- **Total Rust added**: 5,163 lines (including tests, docs, build config)
+**Progress to Date**: 9 components successfully ported to Rust
+- **Total C++ removed**: 671 lines (production code, conditional compilation)
+- **Total Rust added**: 5,763 lines (including tests, docs, build config)
 - **Test regressions**: 0 (perfect compatibility maintained)
 - **Upstream conflicts**: 0 (overlay architecture working as designed)
 - **Success rate**: 100% (all ports completed successfully)
@@ -641,11 +698,12 @@ Every port must:
 - Port #6 (IsValidUtf8): 40 C++ lines → 897 Rust lines (UTF-8 validation)
 - Port #7 (JSONWriter): 47 C++ lines → 746 Rust lines (static const array)
 - Port #8 (ObserverArray): 27 C++ lines → 747 Rust lines (linked list traversal)
+- Port #9 (nsCRT): 123 C++ lines → 600 Rust lines (string utilities)
 
 **Average Port Metrics**:
-- C++ lines per port: ~79 lines
-- Rust lines per port: ~645 lines (includes tests + docs)
-- Line expansion ratio: ~8.2x (due to comprehensive testing and documentation)
+- C++ lines per port: ~75 lines
+- Rust lines per port: ~640 lines (includes tests + docs)
+- Line expansion ratio: ~8.5x (due to comprehensive testing and documentation)
 - Test coverage: 100% (all existing tests pass, new tests added)
 
 **Next Port Target**: To be determined via Phase 1 selection process
@@ -655,6 +713,6 @@ Every port must:
 
 ---
 
-*Last updated: 2025-10-19*  
-*Total ports completed: 8/∞*  
+*Last updated: 2025-10-20*  
+*Total ports completed: 9/∞*  
 *Firefox Carcinization: In Progress* 🦀
