@@ -11,6 +11,19 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/IntegerPrintfMacros.h"
 
+#ifdef MOZ_RUST_TARRAY
+// Use Rust implementation
+
+extern "C" {
+  // Rust exports from firefox_tarray crate
+  extern const nsTArrayHeader sEmptyTArrayHeader;
+  bool IsTwiceTheRequiredBytesRepresentableAsUint32(size_t aCapacity,
+                                                    size_t aElemSize);
+}
+
+#else
+// Use C++ implementation
+
 // Ensure this is sufficiently aligned so that Elements() and co don't create
 // unaligned pointers, or slices with unaligned pointers for empty arrays, see
 // https://github.com/servo/servo/issues/22613.
@@ -21,3 +34,6 @@ bool IsTwiceTheRequiredBytesRepresentableAsUint32(size_t aCapacity,
   using mozilla::CheckedUint32;
   return ((CheckedUint32(aCapacity) * aElemSize) * 2).isValid();
 }
+
+#endif  // MOZ_RUST_TARRAY
+
