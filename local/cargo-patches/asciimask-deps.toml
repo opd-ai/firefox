@@ -1,0 +1,5 @@
+# Cargo dependencies for firefox_asciimask
+# This file is appended to the main Cargo.toml when --enable-rust-asciimask is used
+
+# firefox_asciimask has no external dependencies (no_std crate)
+# This file is here for consistency with other ports

@@ -1,0 +1,9 @@
+# Mozconfig for building Firefox with Rust ASCIIMask port
+
+# Enable the Rust ASCIIMask implementation
+ac_add_options --enable-rust-asciimask
+
+# Optional: Enable other Rust ports
+# ac_add_options --enable-rust-dafsa
+# ac_add_options --enable-rust-chaosmode
+# ... etc
