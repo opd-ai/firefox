@@ -1,0 +1,21 @@
+[package]
+name = "firefox_tarray"
+version = "0.1.0"
+edition = "2021"
+authors = ["Firefox Carcinization Project"]
+license = "MPL-2.0"
+description = "Rust port of nsTArray.cpp (sEmptyTArrayHeader + overflow check)"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+# No external dependencies needed - pure stdlib implementation
+
+[dev-dependencies]
+# No test dependencies needed
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
