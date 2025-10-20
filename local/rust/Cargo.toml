@@ -15,6 +15,7 @@ members = [
     "firefox_nscrt",
     "firefox_asciimask",
     "firefox_tarray",
+    "firefox_arrayutils",
 ]
 
 # Workspace-wide dependency specifications

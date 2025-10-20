@@ -1,0 +1,6 @@
+# Cargo dependency patch for firefox_arrayutils
+# This file defines dependencies for the arrayutils Rust port
+# It will be appended to the main Cargo.toml when MOZ_RUST_ARRAYUTILS is enabled
+
+[dependencies.firefox_arrayutils]
+path = "local/rust/firefox_arrayutils"

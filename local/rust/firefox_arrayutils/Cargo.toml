@@ -1,0 +1,14 @@
+[package]
+name = "firefox_arrayutils"
+version = "0.1.0"
+authors = ["Firefox Developers"]
+edition = "2021"
+license = "MPL-2.0"
+description = "Rust port of Firefox nsArrayUtils (nsQueryArrayElementAt helper)"
+
+[lib]
+crate-type = ["staticlib"]
+path = "src/lib.rs"
+
+[dependencies]
+# No external dependencies needed - pure FFI wrapper
