@@ -11,6 +11,7 @@ members = [
     "firefox_floatingpoint",
     "firefox_utf8_validator",
     "firefox_jsonwriter",
+    "firefox_observer_array",
 ]
 
 # Workspace-wide dependency specifications

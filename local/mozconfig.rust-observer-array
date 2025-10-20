@@ -1,0 +1,11 @@
+# Configuration to enable Rust nsTObserverArray_base implementation
+# Source this file before building Firefox to use the Rust version
+
+# Enable Rust Observer Array
+export MOZ_RUST_OBSERVER_ARRAY=1
+
+# Apply build overlays
+echo "Applying Rust Observer Array build overlays..."
+bash "$(dirname "${BASH_SOURCE[0]}")/scripts/apply-build-overlays.sh"
+
+echo "Rust Observer Array enabled. Run './mach build' to compile."

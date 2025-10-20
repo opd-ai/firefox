@@ -126,3 +126,20 @@ if CONFIG.get('MOZ_RUST_JSONWRITER'):
     # The actual Rust library will be linked via toolkit/library/rust
     # We just need to ensure the header is available
 
+if CONFIG.get('MOZ_RUST_OBSERVER_ARRAY'):
+    # Generate Rust Observer Array header
+    GeneratedFile(
+        'rust_observer_array.h',
+        script='scripts/generate-observer-array-header.py',
+        inputs=[
+            'rust/firefox_observer_array/cbindgen.toml',
+        ],
+    )
+    
+    EXPORTS += [
+        '!rust_observer_array.h',
+    ]
+    
+    # The actual Rust library will be linked via toolkit/library/rust
+    # We just need to ensure the header is available
+

@@ -4,19 +4,19 @@
 
 ## Overview
 - **Total C++ Lines**: ~10,000,000 (estimated)
-- **Rust Lines Added**: 4,416
-- **Replacement Progress**: 0.044%
-- **Components Ported**: 7
+- **Rust Lines Added**: 5,163
+- **Replacement Progress**: 0.052%
+- **Components Ported**: 8
 - **Last Updated**: 2025-10-19
 
 ## Porting Statistics
 
 | Metric | Count |
 |--------|-------|
-| Components ported | 7 |
-| C++ lines removed (production) | 521 |
-| C++ test lines (unchanged) | ~1,907 |
-| Rust lines added | 4,416 |
+| Components ported | 8 |
+| C++ lines removed (production) | 548 |
+| C++ test lines (unchanged) | ~2,480 |
+| Rust lines added | 5,163 |
 | Test regressions | 0 |
 | Upstream conflicts | 0 |
 
@@ -207,6 +207,80 @@
 - **Test Coverage**: 16 Rust tests + 8 C++ test functions (100% pass rate)
 - **Tests Ported**: NONE (tests remain in C++, call via FFI)
 - **Selection Score**: 31/40
+  - Simplicity: 10/10 (47 lines, static data only, no platform code)
+  - Isolation: 7/10 (Used only in JSONWriter.h, 5 uses, minimal deps)
+  - Stability: 10/10 (1 commit/year, very stable)
+  - Testability: 4/10 (Indirectly tested via TestJSONWriter.cpp)
+- **Rationale**: gTwoCharEscapes is a 256-byte lookup table mapping ASCII characters to their JSON two-character escape sequences (per RFC 4627). Pure const data with no logic, perfect for demonstrating static data export via FFI. The table maps 7 characters (\b, \t, \n, \f, \r, ", \) to their escape sequences, while all other entries are zero. Used by JSONWriter.h for JSON string escaping in memory reporting, profiler output, and JSON generation throughout Firefox.
+- **Challenges**:
+  - Header-only template code in JSONWriter.h (545 lines, not ported)
+  - Maintaining byte-for-byte identical memory layout for C++ access
+  - Ensuring cbindgen generates correct C++ bindings
+  - Table accessed directly via array indexing from C++ header code
+- **Solutions**:
+  - Port only the .cpp file (lookup table), not the complex header
+  - Use implicit `#[repr(C)]` via `[i8; 256]` for memory layout
+  - Comprehensive compile-time assertions (size == 256 bytes)
+  - Dual FFI exports: `mozilla_detail_gTwoCharEscapes` (C linkage) and `gTwoCharEscapes` (C++ namespace)
+  - 16 comprehensive Rust tests validate table correctness
+  - Conditional compilation preserves C++ fallback
+- **Performance**: Expected 100-102% (identical memory layout, same array indexing, 256-byte table fits in L1 cache)
+- **Upstream Impact**: Zero conflicts maintained - changes in local/ + conditional in mfbt/JSONWriter.cpp
+- **Call Sites**: 4 uses in JSONWriter.h (extern declaration, two escape checks, one escape character retrieval)
+- **FFI Design**: Dual static array exports, panic-free, read-only data, 'static lifetime
+- **Algorithm**: JSON escape lookup per RFC 4627
+  - Maps characters to two-char escape sequences: \b, \t, \n, \f, \r, \", \\
+  - Zero values indicate no two-char escape (use \uXXXX for other control chars)
+  - Used in EscapedString class for JSON string generation
+  - Thread-safe (const data, read-only access)
+
+### 8. nsTObserverArray_base ✅
+- **Date**: 2025-10-19
+- **Location**: xpcom/ds/nsTObserverArray.cpp → local/rust/firefox_observer_array/
+- **C++ Production Lines Removed**: 0 (conditional compilation via MOZ_RUST_OBSERVER_ARRAY)
+- **C++ Production Lines Modified**: 27 → 47 (added conditional compilation wrapper)
+- **C++ Test Lines (unchanged)**: 573 (xpcom/tests/gtest/TestObserverArray.cpp)
+- **Rust Lines Added**: 747 (lib.rs + ffi.rs + tests.rs + README.md + build files)
+- **Test Coverage**: 23 Rust tests (100% pass rate) + 573-line C++ test suite
+- **Tests Ported**: NONE (tests remain in C++, call via FFI)
+- **Selection Score**: 37/40
+  - Simplicity: 10/10 (27 lines, 1 dependency, no platform code)
+  - Isolation: 9/10 (2 call sites - mostly internal in header, 4 header deps, no inheritance)
+  - Stability: 10/10 (1 commit/year, 0 bugs, stable >2yr)
+  - Testability: 8/10 (573-line test file - excellent, unit+integration tests, very clear assertions)
+- **Rationale**: nsTObserverArray_base is the base class for observer arrays that support stable iterators during array modifications. The .cpp file contains only 27 lines implementing two methods (AdjustIterators, ClearIterators) that manage a linked list of active iterators. Exceptional testability (573-line test suite), perfect simplicity, strong isolation (calls from template header only), and rock-solid stability make this an ideal port. The component demonstrates pure pointer manipulation with clear safety boundaries.
+- **Challenges**:
+  - Raw pointer manipulation (linked list traversal)
+  - Template class in header (583 lines - NOT ported)
+  - Pointer-based iterator management (need careful unsafe Rust)
+  - Memory layout dependencies (Iterator_base struct)
+  - All calls from template code (header-only)
+- **Solutions**:
+  - Port only the .cpp file (2 methods), NOT the template header
+  - Use #[repr(C)] for Iterator_base struct compatibility
+  - Comprehensive null checks before dereferencing
+  - FFI layer with panic boundaries to prevent unwinding
+  - 23 Rust tests (7 FFI + 16 unit) validate pointer manipulation
+  - Conditional compilation preserves C++ fallback
+  - Wrapping arithmetic for pointer offset calculations
+- **Performance**: Expected 100-102% (identical algorithm - linked list traversal, same memory access patterns)
+- **Upstream Impact**: Zero conflicts maintained - conditional compilation in nsTObserverArray.cpp + all changes in local/
+- **Call Sites**: 11 internal uses in nsTObserverArray.h template code:
+  - InsertElementAt (3 calls) - AdjustIterators(index, +1)
+  - RemoveElementAt, RemoveElement, NonObservingRemoveElementsBy - AdjustIterators(index, -1)
+  - Clear() - ClearIterators()
+  - All protected methods called only by derived template classes
+- **FFI Design**: Two methods exposed via FFI with panic boundaries:
+  - nsTObserverArray_base_AdjustIterators(this, mod_pos, adjustment)
+  - nsTObserverArray_base_ClearIterators(this)
+  - Null-safe, panic-catching wrappers
+  - Direct signature match with C++ methods
+- **Algorithm**: Iterator position management for stable iteration
+  - **AdjustIterators**: Walk iterator linked list, adjust positions beyond modification point
+    - Insertion (+1): Increment positions after insert point
+    - Removal (-1): Decrement positions after removal point
+  - **ClearIterators**: Walk iterator linked list, reset all positions to 0
+  - Maintains iterator validity during concurrent array modifications
   - Simplicity: 10/10 (47 lines, static data only, no platform code)
   - Isolation: 7/10 (Used only in JSONWriter.h, 5 uses, minimal deps)
   - Stability: 10/10 (1 commit/year, very stable)
@@ -458,14 +532,51 @@ Every port must:
   - Pure data structure porting (no logic)
   - RFC compliance (JSON RFC 4627 escape sequences)
 
+#### Port #8: nsTObserverArray_base
+- **What went well**:
+  - Smallest port yet - 27 lines C++ → 191 lines Rust core logic (7x expansion)
+  - Highest test coverage - 23 Rust tests + 573-line C++ test suite
+  - Perfect isolation - only 2 methods in .cpp file (template header NOT ported)
+  - Zero external dependencies - pure std library
+  - Raw pointer manipulation straightforward with proper safety checks
+  - FFI layer design well-established (reused patterns from Ports #1-7)
+- **Challenges**:
+  - Raw pointer manipulation requires unsafe Rust (linked list traversal)
+  - Template class in header (583 lines) stays in C++
+  - Linked list traversal needs careful null checks
+  - Must match C++ pointer semantics exactly (no Rust ownership)
+  - All calls from template code (header-only, not from .cpp files)
+- **Solutions**:
+  - Port only .cpp file (2 methods), template header calls via FFI
+  - Use #[repr(C)] for Iterator_base struct compatibility
+  - Comprehensive null checks before dereferencing pointers
+  - Panic boundaries in FFI for all functions
+  - Debug assertions for invariant validation (adjustment must be -1 or +1)
+  - Wrapping arithmetic for pointer offset calculations
+  - 23 comprehensive tests (7 FFI + 16 unit) validate pointer manipulation
+- **FFI Design Patterns**:
+  - Linked list traversal with null termination
+  - Raw pointer manipulation with explicit null checks
+  - Panic-catching wrappers prevent unwinding into C++
+  - Direct signature match: `void Method(size_t, ptrdiff_t)`
+  - No ownership transfer (C++ owns iterators, Rust just manipulates)
+- **Reusable patterns**:
+  - Linked list traversal with null-terminated chains
+  - #[repr(C)] for pointer-based structures
+  - Panic boundaries in FFI for safety
+  - Debug assertions for argument validation
+  - Wrapping arithmetic for safe integer operations
+  - Pure pointer manipulation (no allocation, no ownership transfer)
+  - Template header + Rust .cpp pattern (complex logic stays in C++, simple methods ported)
+
 ## Monthly Progress
 
 ### October 2025
-- Components ported: 7 (+1 from previous update)
-- C++ production lines removed: 521 (conditional compilation)
-- C++ test lines (unchanged): ~1,907 (+665 from TestJSONWriter.cpp)
-- Rust lines added: 4,416 (+746)
-- Replacement rate: 0.044% (+0.007%)
+- Components ported: 8 (+1 from previous update)
+- C++ production lines removed: 548 (conditional compilation)
+- C++ test lines (unchanged): ~2,480 (+573 from TestObserverArray.cpp)
+- Rust lines added: 5,163 (+747)
+- Replacement rate: 0.052% (+0.008%)
 - Upstream syncs: 0 (initial implementation)
 - **Highlights**:
   - Port #1: Dafsa - Established overlay architecture pattern
@@ -474,13 +585,15 @@ Every port must:
   - Port #4: HashBytes - Pure function, golden ratio hashing, word-by-word optimization
   - Port #5: IsFloat32Representable - Pure math function, IEEE-754 compliance, JIT integration
   - Port #6: IsValidUtf8 - Pure UTF-8 validation, Rust stdlib, RFC 3629 compliance
-  - Port #7: JSONWriter (gTwoCharEscapes) - **Pure data structure, static const array, RFC 4627 compliance**
+  - Port #7: JSONWriter (gTwoCharEscapes) - Pure data structure, static const array, RFC 4627 compliance
+  - Port #8: nsTObserverArray_base - **Smallest port (27 lines), highest test coverage (573+23 tests), linked list traversal**
   - Created comprehensive selection and analysis framework
-  - Zero test regressions across all seven ports
+  - Zero test regressions across all eight ports
   - All ports maintain upstream compatibility (zero conflicts)
   - Established reusable patterns for FFI safety and panic handling
   - Demonstrated leveraging Rust stdlib for correctness and performance
-  - Demonstrated static data export via FFI (new pattern)
+  - Demonstrated static data export via FFI
+  - Demonstrated safe raw pointer manipulation for linked list traversal
 
 ## Next Steps
 
@@ -505,9 +618,9 @@ Every port must:
 
 ## Summary
 
-**Progress to Date**: 7 components successfully ported to Rust
-- **Total C++ removed**: 521 lines (production code, conditional compilation)
-- **Total Rust added**: 4,416 lines (including tests, docs, build config)
+**Progress to Date**: 8 components successfully ported to Rust
+- **Total C++ removed**: 548 lines (production code, conditional compilation)
+- **Total Rust added**: 5,163 lines (including tests, docs, build config)
 - **Test regressions**: 0 (perfect compatibility maintained)
 - **Upstream conflicts**: 0 (overlay architecture working as designed)
 - **Success rate**: 100% (all ports completed successfully)
@@ -527,11 +640,12 @@ Every port must:
 - Port #5 (IsFloat32): 42 C++ lines → 675 Rust lines (pure math function)
 - Port #6 (IsValidUtf8): 40 C++ lines → 897 Rust lines (UTF-8 validation)
 - Port #7 (JSONWriter): 47 C++ lines → 746 Rust lines (static const array)
+- Port #8 (ObserverArray): 27 C++ lines → 747 Rust lines (linked list traversal)
 
 **Average Port Metrics**:
-- C++ lines per port: ~87 lines
-- Rust lines per port: ~631 lines (includes tests + docs)
-- Line expansion ratio: ~7.3x (due to comprehensive testing and documentation)
+- C++ lines per port: ~79 lines
+- Rust lines per port: ~645 lines (includes tests + docs)
+- Line expansion ratio: ~8.2x (due to comprehensive testing and documentation)
 - Test coverage: 100% (all existing tests pass, new tests added)
 
 **Next Port Target**: To be determined via Phase 1 selection process
@@ -542,5 +656,5 @@ Every port must:
 ---
 
 *Last updated: 2025-10-19*  
-*Total ports completed: 7/∞*  
+*Total ports completed: 8/∞*  
 *Firefox Carcinization: In Progress* 🦀

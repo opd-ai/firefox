@@ -134,4 +134,21 @@ else
     echo "MOZ_RUST_JSONWRITER not set, skipping Rust JSONWriter overlay"
 fi
 
+if [ "$MOZ_RUST_OBSERVER_ARRAY" = "1" ]; then
+    echo "Enabling Rust Observer Array implementation..."
+    
+    # Append Cargo dependencies (idempotent check)
+    SHARED_CARGO="toolkit/library/rust/shared/Cargo.toml"
+    if ! grep -q "firefox_observer_array" "$SHARED_CARGO" 2>/dev/null; then
+        echo "  Adding firefox_observer_array to $SHARED_CARGO"
+        cat local/cargo-patches/observer-array-deps.toml >> "$SHARED_CARGO"
+    else
+        echo "  firefox_observer_array already present in $SHARED_CARGO"
+    fi
+    
+    echo "Rust Observer Array overlay applied successfully"
+else
+    echo "MOZ_RUST_OBSERVER_ARRAY not set, skipping Rust Observer Array overlay"
+fi
+
 echo "Done applying overlays"
