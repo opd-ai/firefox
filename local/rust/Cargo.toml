@@ -10,6 +10,7 @@ members = [
     "firefox_hashbytes",
     "firefox_floatingpoint",
     "firefox_utf8_validator",
+    "firefox_jsonwriter",
 ]
 
 # Workspace-wide dependency specifications
