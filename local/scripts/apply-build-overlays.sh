@@ -151,4 +151,21 @@ else
     echo "MOZ_RUST_OBSERVER_ARRAY not set, skipping Rust Observer Array overlay"
 fi
 
+if [ "$MOZ_RUST_ARRAYUTILS" = "1" ]; then
+    echo "Enabling Rust ArrayUtils implementation..."
+    
+    # Append Cargo dependencies (idempotent check)
+    SHARED_CARGO="toolkit/library/rust/shared/Cargo.toml"
+    if ! grep -q "firefox_arrayutils" "$SHARED_CARGO" 2>/dev/null; then
+        echo "  Adding firefox_arrayutils to $SHARED_CARGO"
+        cat local/cargo-patches/arrayutils-deps.toml >> "$SHARED_CARGO"
+    else
+        echo "  firefox_arrayutils already present in $SHARED_CARGO"
+    fi
+    
+    echo "Rust ArrayUtils overlay applied successfully"
+else
+    echo "MOZ_RUST_ARRAYUTILS not set, skipping Rust ArrayUtils overlay"
+fi
+
 echo "Done applying overlays"

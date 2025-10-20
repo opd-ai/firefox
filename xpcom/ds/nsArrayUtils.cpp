@@ -6,6 +6,28 @@
 
 #include "nsArrayUtils.h"
 
+#ifdef MOZ_RUST_ARRAYUTILS
+// Use Rust implementation
+
+extern "C" {
+  // Rust export from firefox_arrayutils crate
+  nsresult nsQueryArrayElementAt_operator(
+      nsIArray* array,
+      uint32_t index,
+      const nsIID* iid,
+      void** result,
+      nsresult* error_ptr);
+}
+
+nsresult nsQueryArrayElementAt::operator()(const nsIID& aIID,
+                                           void** aResult) const {
+  return nsQueryArrayElementAt_operator(mArray, mIndex, &aIID, aResult,
+                                       mErrorPtr);
+}
+
+#else
+// Use C++ implementation
+
 //
 // do_QueryElementAt helper stuff
 //
@@ -20,3 +42,5 @@ nsresult nsQueryArrayElementAt::operator()(const nsIID& aIID,
 
   return status;
 }
+
+#endif  // MOZ_RUST_ARRAYUTILS
