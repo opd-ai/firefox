@@ -177,3 +177,20 @@ if CONFIG.get('MOZ_RUST_ASCIIMASK'):
     # The actual Rust library will be linked via toolkit/library/rust
     # We just need to ensure the header is available
 
+if CONFIG.get('MOZ_RUST_TARRAY'):
+    # Generate Rust nsTArray header
+    GeneratedFile(
+        'rust_tarray.h',
+        script='scripts/generate-tarray-header.py',
+        inputs=[
+            'rust/firefox_tarray/cbindgen.toml',
+        ],
+    )
+    
+    EXPORTS += [
+        '!rust_tarray.h',
+    ]
+    
+    # The actual Rust library will be linked via toolkit/library/rust
+    # We just need to ensure the header is available
+

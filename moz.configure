@@ -977,6 +977,13 @@ option(
 
 set_config("MOZ_RUST_FLOATINGPOINT", depends("--enable-rust-floatingpoint")(lambda x: x))
 
+option(
+    "--enable-rust-tarray",
+    help="Use Rust implementation of nsTArray exports instead of C++",
+)
+
+set_config("MOZ_RUST_TARRAY", depends("--enable-rust-tarray")(lambda x: x))
+
 
 @depends(build_environment, configure_cache)
 @imports(_import="json")

@@ -1,0 +1,9 @@
+# Mozconfig for building Firefox with Rust nsTArray port
+
+# Enable the Rust nsTArray implementation
+ac_add_options --enable-rust-tarray
+
+# Optional: Enable other Rust ports
+# ac_add_options --enable-rust-dafsa
+# ac_add_options --enable-rust-asciimask
+# ... etc
