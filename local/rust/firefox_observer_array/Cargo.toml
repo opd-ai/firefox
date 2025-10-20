@@ -1,0 +1,16 @@
+[package]
+name = "firefox_observer_array"
+version = "0.1.0"
+edition = "2021"
+authors = ["Firefox Developers"]
+license = "MPL-2.0"
+description = "Rust port of nsTObserverArray_base (iterator management for observer arrays)"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+# No external dependencies needed - pure pointer manipulation
+
+[dev-dependencies]
+# No dev dependencies needed for this simple port
