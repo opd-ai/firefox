@@ -1,0 +1,9 @@
+# Enable Rust implementation of nsCRT functions
+ac_add_options --enable-rust-nscrt
+
+# This replaces the C++ implementation of nsCRT::strtok, strcmp(char16_t*), and atoll
+# with memory-safe Rust equivalents while maintaining 100% API compatibility.
+#
+# Build with:
+#   export MOZCONFIG=local/mozconfig.rust-nscrt
+#   ./mach build

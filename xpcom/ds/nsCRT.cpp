@@ -21,6 +21,29 @@
 #include "nsCRT.h"
 #include "nsDebug.h"
 
+#ifdef MOZ_RUST_NSCRT
+// Use Rust implementation
+extern "C" {
+char* nsCRT_strtok(char* aString, const char* aDelims, char** aNewStr);
+int32_t nsCRT_strcmp_char16(const char16_t* aStr1, const char16_t* aStr2);
+int64_t nsCRT_atoll(const char* aStr);
+}
+
+char* nsCRT::strtok(char* aString, const char* aDelims, char** aNewStr) {
+  return nsCRT_strtok(aString, aDelims, aNewStr);
+}
+
+int32_t nsCRT::strcmp(const char16_t* aStr1, const char16_t* aStr2) {
+  return nsCRT_strcmp_char16(aStr1, aStr2);
+}
+
+int64_t nsCRT::atoll(const char* aStr) {
+  return nsCRT_atoll(aStr);
+}
+
+#else
+// Use C++ implementation
+
 //----------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -121,3 +144,5 @@ int64_t nsCRT::atoll(const char* aStr) {
 
   return ll;
 }
+
+#endif  // MOZ_RUST_NSCRT

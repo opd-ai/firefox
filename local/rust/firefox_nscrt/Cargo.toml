@@ -1,0 +1,15 @@
+[package]
+name = "firefox_nscrt"
+version = "0.1.0"
+edition = "2021"
+authors = ["Firefox Developers"]
+license = "MPL-2.0"
+description = "Rust port of nsCRT.cpp utility functions (strtok, strcmp(char16_t*), atoll)"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+
+[build-dependencies]
+cbindgen = "0.27"
