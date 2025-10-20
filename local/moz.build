@@ -160,3 +160,20 @@ if CONFIG.get('MOZ_RUST_NSCRT'):
     # The actual Rust library will be linked via toolkit/library/rust
     # We just need to ensure the header is available
 
+if CONFIG.get('MOZ_RUST_ASCIIMASK'):
+    # Generate Rust ASCIIMask header
+    GeneratedFile(
+        'rust_asciimask.h',
+        script='scripts/generate-asciimask-header.py',
+        inputs=[
+            'rust/firefox_asciimask/cbindgen.toml',
+        ],
+    )
+    
+    EXPORTS += [
+        '!rust_asciimask.h',
+    ]
+    
+    # The actual Rust library will be linked via toolkit/library/rust
+    # We just need to ensure the header is available
+

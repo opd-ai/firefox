@@ -13,6 +13,7 @@ members = [
     "firefox_jsonwriter",
     "firefox_observer_array",
     "firefox_nscrt",
+    "firefox_asciimask",
 ]
 
 # Workspace-wide dependency specifications

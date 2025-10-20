@@ -8,6 +8,35 @@
 
 namespace mozilla {
 
+#ifdef MOZ_RUST_ASCIIMASK
+// Use Rust implementation
+
+extern "C" {
+  const ASCIIMaskArray* ASCIIMask_MaskWhitespace();
+  const ASCIIMaskArray* ASCIIMask_MaskCRLF();
+  const ASCIIMaskArray* ASCIIMask_MaskCRLFTab();
+  const ASCIIMaskArray* ASCIIMask_Mask0to9();
+}
+
+const ASCIIMaskArray& ASCIIMask::MaskWhitespace() {
+  return *ASCIIMask_MaskWhitespace();
+}
+
+const ASCIIMaskArray& ASCIIMask::MaskCRLF() {
+  return *ASCIIMask_MaskCRLF();
+}
+
+const ASCIIMaskArray& ASCIIMask::MaskCRLFTab() {
+  return *ASCIIMask_MaskCRLFTab();
+}
+
+const ASCIIMaskArray& ASCIIMask::Mask0to9() {
+  return *ASCIIMask_Mask0to9();
+}
+
+#else
+// Use C++ implementation
+
 constexpr bool TestWhitespace(char c) {
   return c == '\f' || c == '\t' || c == '\r' || c == '\n' || c == ' ';
 }
@@ -34,5 +63,7 @@ const ASCIIMaskArray& ASCIIMask::MaskCRLF() { return sCRLFMask; }
 const ASCIIMaskArray& ASCIIMask::MaskCRLFTab() { return sCRLFTabMask; }
 
 const ASCIIMaskArray& ASCIIMask::Mask0to9() { return sZeroToNineMask; }
+
+#endif  // MOZ_RUST_ASCIIMASK
 
 }  // namespace mozilla
