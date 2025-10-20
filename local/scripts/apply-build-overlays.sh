@@ -117,4 +117,21 @@ else
     echo "MOZ_RUST_UTF8_VALIDATOR not set, skipping Rust UTF-8 Validator overlay"
 fi
 
+if [ "$MOZ_RUST_JSONWRITER" = "1" ]; then
+    echo "Enabling Rust JSONWriter implementation..."
+    
+    # Append Cargo dependencies (idempotent check)
+    SHARED_CARGO="toolkit/library/rust/shared/Cargo.toml"
+    if ! grep -q "firefox_jsonwriter" "$SHARED_CARGO" 2>/dev/null; then
+        echo "  Adding firefox_jsonwriter to $SHARED_CARGO"
+        cat local/cargo-patches/jsonwriter-deps.toml >> "$SHARED_CARGO"
+    else
+        echo "  firefox_jsonwriter already present in $SHARED_CARGO"
+    fi
+    
+    echo "Rust JSONWriter overlay applied successfully"
+else
+    echo "MOZ_RUST_JSONWRITER not set, skipping Rust JSONWriter overlay"
+fi
+
 echo "Done applying overlays"

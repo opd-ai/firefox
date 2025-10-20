@@ -4,19 +4,19 @@
 
 ## Overview
 - **Total C++ Lines**: ~10,000,000 (estimated)
-- **Rust Lines Added**: 3,670
-- **Replacement Progress**: 0.037%
-- **Components Ported**: 6
+- **Rust Lines Added**: 4,416
+- **Replacement Progress**: 0.044%
+- **Components Ported**: 7
 - **Last Updated**: 2025-10-19
 
 ## Porting Statistics
 
 | Metric | Count |
 |--------|-------|
-| Components ported | 6 |
+| Components ported | 7 |
 | C++ lines removed (production) | 521 |
-| C++ test lines (unchanged) | ~1,242 |
-| Rust lines added | 3,670 |
+| C++ test lines (unchanged) | ~1,907 |
+| Rust lines added | 4,416 |
 | Test regressions | 0 |
 | Upstream conflicts | 0 |
 
@@ -196,6 +196,43 @@
   - Rejects surrogates (U+D800-U+DFFF)
   - Validates code point range (U+0000-U+10FFFF)
   - Checks complete sequences (no truncation)
+
+### 7. JSONWriter (gTwoCharEscapes) ✅
+- **Date**: 2025-10-19
+- **Location**: mfbt/JSONWriter.cpp → local/rust/firefox_jsonwriter/
+- **C++ Production Lines Removed**: 0 (conditional compilation via MOZ_RUST_JSONWRITER)
+- **C++ Production Lines Modified**: 47 (mfbt/JSONWriter.cpp - table definition)
+- **C++ Test Lines (unchanged)**: 665 (mfbt/tests/TestJSONWriter.cpp)
+- **Rust Lines Added**: 746 (lib.rs + ffi.rs + README.md + build files)
+- **Test Coverage**: 16 Rust tests + 8 C++ test functions (100% pass rate)
+- **Tests Ported**: NONE (tests remain in C++, call via FFI)
+- **Selection Score**: 31/40
+  - Simplicity: 10/10 (47 lines, static data only, no platform code)
+  - Isolation: 7/10 (Used only in JSONWriter.h, 5 uses, minimal deps)
+  - Stability: 10/10 (1 commit/year, very stable)
+  - Testability: 4/10 (Indirectly tested via TestJSONWriter.cpp)
+- **Rationale**: gTwoCharEscapes is a 256-byte lookup table mapping ASCII characters to their JSON two-character escape sequences (per RFC 4627). Pure const data with no logic, perfect for demonstrating static data export via FFI. The table maps 7 characters (\b, \t, \n, \f, \r, ", \) to their escape sequences, while all other entries are zero. Used by JSONWriter.h for JSON string escaping in memory reporting, profiler output, and JSON generation throughout Firefox.
+- **Challenges**:
+  - Header-only template code in JSONWriter.h (545 lines, not ported)
+  - Maintaining byte-for-byte identical memory layout for C++ access
+  - Ensuring cbindgen generates correct C++ bindings
+  - Table accessed directly via array indexing from C++ header code
+- **Solutions**:
+  - Port only the .cpp file (lookup table), not the complex header
+  - Use implicit `#[repr(C)]` via `[i8; 256]` for memory layout
+  - Comprehensive compile-time assertions (size == 256 bytes)
+  - Dual FFI exports: `mozilla_detail_gTwoCharEscapes` (C linkage) and `gTwoCharEscapes` (C++ namespace)
+  - 16 comprehensive Rust tests validate table correctness
+  - Conditional compilation preserves C++ fallback
+- **Performance**: Expected 100-102% (identical memory layout, same array indexing, 256-byte table fits in L1 cache)
+- **Upstream Impact**: Zero conflicts maintained - changes in local/ + conditional in mfbt/JSONWriter.cpp
+- **Call Sites**: 4 uses in JSONWriter.h (extern declaration, two escape checks, one escape character retrieval)
+- **FFI Design**: Dual static array exports, panic-free, read-only data, 'static lifetime
+- **Algorithm**: JSON escape lookup per RFC 4627
+  - Maps characters to two-char escape sequences: \b, \t, \n, \f, \r, \", \\
+  - Zero values indicate no two-char escape (use \uXXXX for other control chars)
+  - Used in EscapedString class for JSON string generation
+  - Thread-safe (const data, read-only access)
 
 ## Components In Progress
 
@@ -388,14 +425,47 @@ Every port must:
   - Property-based testing (determinism, length preservation)
   - Trust Rust stdlib for standards compliance (UTF-8, IEEE-754, etc.)
 
+#### Port #7: JSONWriter (gTwoCharEscapes)
+- **What went well**:
+  - Pure data structure port - no logic, just a 256-byte lookup table
+  - Comprehensive test coverage (16 Rust tests + 8 C++ test functions)
+  - Perfect candidate for static data export via FFI
+  - Simplest port yet - const array only
+  - Zero external dependencies (stdlib only)
+  - Dual FFI exports for C/C++ compatibility
+- **Challenges**:
+  - Header-only template code in JSONWriter.h (545 lines, complex)
+  - Need to maintain exact memory layout for C++ array access
+  - Ensuring cbindgen generates correct C++ bindings
+  - Table accessed directly via indexing (not through function calls)
+- **Solutions**:
+  - Port only the .cpp file (lookup table), not the complex header
+  - Use implicit `#[repr(C)]` via `[i8; 256]` for guaranteed layout
+  - Comprehensive compile-time assertions (size == 256 bytes)
+  - Dual FFI exports: both C linkage and C++ namespace style
+  - 16 comprehensive Rust tests validate correctness
+  - Clear documentation of memory layout and FFI usage
+- **FFI Design Patterns**:
+  - Static const data export (new pattern)
+  - No function calls - direct array access from C++
+  - Dual symbol exports for compatibility
+  - Compile-time layout verification
+  - Read-only, thread-safe by design
+- **Reusable patterns**:
+  - Static lookup table export via FFI
+  - Compile-time size/alignment verification
+  - Dual FFI exports (C and C++ namespace styles)
+  - Pure data structure porting (no logic)
+  - RFC compliance (JSON RFC 4627 escape sequences)
+
 ## Monthly Progress
 
 ### October 2025
-- Components ported: 6 (+1 from previous update)
-- C++ production lines removed: 521 (conditional compilation for Port #6)
-- C++ test lines (unchanged): ~1,242 (+742 from TestUtf8.cpp)
-- Rust lines added: 3,670 (+897)
-- Replacement rate: 0.037% (+0.009%)
+- Components ported: 7 (+1 from previous update)
+- C++ production lines removed: 521 (conditional compilation)
+- C++ test lines (unchanged): ~1,907 (+665 from TestJSONWriter.cpp)
+- Rust lines added: 4,416 (+746)
+- Replacement rate: 0.044% (+0.007%)
 - Upstream syncs: 0 (initial implementation)
 - **Highlights**:
   - Port #1: Dafsa - Established overlay architecture pattern
@@ -403,12 +473,14 @@ Every port must:
   - Port #3: XorShift128PlusRNG - Pure computation, JIT integration, bit-exact algorithm
   - Port #4: HashBytes - Pure function, golden ratio hashing, word-by-word optimization
   - Port #5: IsFloat32Representable - Pure math function, IEEE-754 compliance, JIT integration
-  - Port #6: IsValidUtf8 - **Pure UTF-8 validation, Rust stdlib, RFC 3629 compliance**
+  - Port #6: IsValidUtf8 - Pure UTF-8 validation, Rust stdlib, RFC 3629 compliance
+  - Port #7: JSONWriter (gTwoCharEscapes) - **Pure data structure, static const array, RFC 4627 compliance**
   - Created comprehensive selection and analysis framework
-  - Zero test regressions across all six ports
+  - Zero test regressions across all seven ports
   - All ports maintain upstream compatibility (zero conflicts)
   - Established reusable patterns for FFI safety and panic handling
   - Demonstrated leveraging Rust stdlib for correctness and performance
+  - Demonstrated static data export via FFI (new pattern)
 
 ## Next Steps
 
@@ -433,9 +505,9 @@ Every port must:
 
 ## Summary
 
-**Progress to Date**: 6 components successfully ported to Rust
+**Progress to Date**: 7 components successfully ported to Rust
 - **Total C++ removed**: 521 lines (production code, conditional compilation)
-- **Total Rust added**: 3,670 lines (including tests, docs, build config)
+- **Total Rust added**: 4,416 lines (including tests, docs, build config)
 - **Test regressions**: 0 (perfect compatibility maintained)
 - **Upstream conflicts**: 0 (overlay architecture working as designed)
 - **Success rate**: 100% (all ports completed successfully)
@@ -454,11 +526,12 @@ Every port must:
 - Port #4 (HashBytes): 38 C++ lines → 575 Rust lines (pure function)
 - Port #5 (IsFloat32): 42 C++ lines → 675 Rust lines (pure math function)
 - Port #6 (IsValidUtf8): 40 C++ lines → 897 Rust lines (UTF-8 validation)
+- Port #7 (JSONWriter): 47 C++ lines → 746 Rust lines (static const array)
 
 **Average Port Metrics**:
-- C++ lines per port: ~94 lines
-- Rust lines per port: ~612 lines (includes tests + docs)
-- Line expansion ratio: ~6.5x (due to comprehensive testing and documentation)
+- C++ lines per port: ~87 lines
+- Rust lines per port: ~631 lines (includes tests + docs)
+- Line expansion ratio: ~7.3x (due to comprehensive testing and documentation)
 - Test coverage: 100% (all existing tests pass, new tests added)
 
 **Next Port Target**: To be determined via Phase 1 selection process
@@ -469,5 +542,5 @@ Every port must:
 ---
 
 *Last updated: 2025-10-19*  
-*Total ports completed: 6/∞*  
+*Total ports completed: 7/∞*  
 *Firefox Carcinization: In Progress* 🦀
