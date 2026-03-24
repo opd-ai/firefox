@@ -47,6 +47,7 @@
 #include "js/WaitCallbacks.h"
 #include "js/Warnings.h"  // JS::WarningReporter
 #include "js/Zone.h"
+#include "util/LanguageId.h"
 #include "vm/Caches.h"  // js::RuntimeCaches
 #include "vm/CodeCoverage.h"
 #include "vm/GeckoProfiler.h"
@@ -712,7 +713,7 @@ struct JSRuntime {
   js::MainThreadData<const JSLocaleCallbacks*> localeCallbacks;
 
   /* Default locale for Internationalization API */
-  js::MainThreadData<js::UniqueChars> defaultLocale;
+  js::MainThreadData<js::LanguageId> defaultLocale;
 
   /* If true, new scripts must be created with PC counter information. */
   js::MainThreadOrIonCompileData<bool> profilingScripts;
@@ -802,28 +803,41 @@ struct JSRuntime {
   // Locale information
   //-------------------------------------------------------------------------
 
+  void setDefaultLocale(js::LanguageId locale);
+
  public:
   /*
    * Set the default locale for the ECMAScript Internationalization API
-   * (Intl.Collator, Intl.NumberFormat, Intl.DateTimeFormat).
-   * Note that the Internationalization API encourages clients to
-   * specify their own locales.
+   * (Intl.Collator, Intl.NumberFormat, Intl.DateTimeFormat, ...).
+   * Note that the Internationalization API encourages clients to specify their
+   * own locales.
+   *
+   * The *actual* default locale for Intl operations is computed by a prefix
+   * lookup on the ICU available locales.
+   *
    * The locale string remains owned by the caller.
+   *
+   * A null-pointer input is ignored.
    */
   bool setDefaultLocale(const char* locale);
 
   /* Reset the default locale to OS defaults. */
   void resetDefaultLocale();
 
-  /* Gets current default locale. String remains owned by runtime. */
-  const char* getDefaultLocale();
+  /*
+   * Gets the current default locale.
+   *
+   * The returned locale is canonicalized, but not necessarily an available
+   * locale for the ECMA-402 Intl API. `intl::GlobalIntlData::defaultLocale()`
+   * returns the *actual* default locale used for `Intl` objects.
+   */
+  js::LanguageId getDefaultLocale();
 
   /*
-   * Gets current default locale or nullptr if not initialized.
-   * String remains owned by runtime.
+   * Gets the current default locale or `LanguageId::und()` if not initialized.
    */
-  const char* getDefaultLocaleIfInitialized() const {
-    return defaultLocale.ref().get();
+  js::LanguageId getDefaultLocaleIfInitialized() const {
+    return defaultLocale.ref();
   }
 
   /* Garbage collector state. */

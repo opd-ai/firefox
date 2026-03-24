@@ -33,6 +33,7 @@ const hourlyForecasts = [
     epoch_date_time: 1000000000,
     temperature: { c: 18, f: 64 },
     icon_id: 5,
+    summary: "Partly Cloudy",
     date_time: "2024-01-15T14:00:00",
     url: "https://example.com/forecast",
   },
@@ -40,12 +41,14 @@ const hourlyForecasts = [
     epoch_date_time: 1000003600,
     temperature: { c: 17, f: 62 },
     icon_id: 6,
+    summary: "Mostly Cloudy",
     date_time: "2024-01-15T15:00:00",
   },
   {
     epoch_date_time: 1000007200,
     temperature: { c: 16, f: 61 },
     icon_id: 7,
+    summary: "Cloudy",
     date_time: "2024-01-15T16:00:00",
   },
 ];
@@ -503,6 +506,14 @@ describe("<WeatherForecast>", () => {
             .find(`.weather-icon.iconId${hourlyForecasts[index].icon_id}`)
             .exists()
         );
+      });
+    });
+
+    it("should render aria-label with summary for each weather icon", () => {
+      const items = wrapper.find(".forecast-row-items li");
+      items.forEach((item, index) => {
+        const icon = item.find(".weather-icon");
+        assert.equal(icon.prop("aria-label"), hourlyForecasts[index].summary);
       });
     });
 

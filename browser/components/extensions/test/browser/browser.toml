@@ -664,7 +664,7 @@ https_first_disabled = true
 
 ["browser_ext_topSites.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks && swgl", # Bug 1775583
+  "os == 'linux' && display == 'x11' && opt", # Bug 1775583
 ]
 
 ["browser_ext_url_overrides_newtab.js"]

@@ -50,6 +50,7 @@
 #include "js/PropertySpec.h"
 #include "js/Wrapper.h"
 #include "util/DifferentialTesting.h"
+#include "util/LanguageId.h"
 #include "util/StringBuilder.h"
 #include "util/Text.h"
 #include "vm/DateObject.h"
@@ -110,7 +111,7 @@ class DateTimeHelper {
                                    DateTimeInfo::TimeZoneOffset offset);
 
   static JSString* timeZoneComment(JSContext* cx, DateTimeInfo* dtInfo,
-                                   const char* locale, int64_t utcTime,
+                                   LanguageId locale, int64_t utcTime,
                                    int64_t localTime);
 #if !JS_HAS_INTL_API
   static size_t formatTime(char* buf, size_t buflen, const char* fmt,
@@ -3924,7 +3925,7 @@ static bool date_toJSON(JSContext* cx, unsigned argc, Value* vp) {
 
 #if JS_HAS_INTL_API
 JSString* DateTimeHelper::timeZoneComment(JSContext* cx, DateTimeInfo* dtInfo,
-                                          const char* locale, int64_t utcTime,
+                                          LanguageId locale, int64_t utcTime,
                                           int64_t localTime) {
   MOZ_ASSERT(IsTimeValue(utcTime));
   MOZ_ASSERT(IsLocalTimeValue(localTime));
@@ -3982,7 +3983,7 @@ size_t DateTimeHelper::formatTime(char* buf, size_t buflen, const char* fmt,
 }
 
 JSString* DateTimeHelper::timeZoneComment(JSContext* cx, DateTimeInfo* dtInfo,
-                                          const char* locale, int64_t utcTime,
+                                          LanguageId locale, int64_t utcTime,
                                           int64_t localTime) {
   MOZ_ASSERT(dtInfo == nullptr);
 
@@ -4020,7 +4021,7 @@ JSString* DateTimeHelper::timeZoneComment(JSContext* cx, DateTimeInfo* dtInfo,
 
 enum class FormatSpec { DateTime, Date, Time };
 
-static bool FormatDate(JSContext* cx, DateTimeInfo* dtInfo, const char* locale,
+static bool FormatDate(JSContext* cx, DateTimeInfo* dtInfo, LanguageId locale,
                        double utcTime, FormatSpec format,
                        MutableHandleValue rval) {
   MOZ_ASSERT(IsTimeValue(utcTime));
@@ -4147,11 +4148,6 @@ static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
                                  const char* format, MutableHandleValue rval) {
   double utcTime = unwrapped->UTCTime().toDouble();
 
-  const char* locale = unwrapped->realm()->getLocale();
-  if (!locale) {
-    return false;
-  }
-
   char buf[100];
   if (!std::isfinite(utcTime)) {
     strcpy(buf, "InvalidDate");
@@ -4167,6 +4163,7 @@ static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
 
     /* If it failed, default to toString. */
     if (result_len == 0) {
+      auto locale = unwrapped->realm()->getLocale();
       return FormatDate(cx, nullptr, locale, utcTime, FormatSpec::DateTime,
                         rval);
     }
@@ -4325,10 +4322,7 @@ static bool date_toTimeString(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Steps 3-6.
-  const char* locale = unwrapped->realm()->getLocale();
-  if (!locale) {
-    return false;
-  }
+  auto locale = unwrapped->realm()->getLocale();
   return FormatDate(cx, unwrapped->dateTimeInfo(), locale,
                     unwrapped->UTCTime().toDouble(), FormatSpec::Time,
                     args.rval());
@@ -4351,10 +4345,7 @@ static bool date_toDateString(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Steps 3-6.
-  const char* locale = unwrapped->realm()->getLocale();
-  if (!locale) {
-    return false;
-  }
+  auto locale = unwrapped->realm()->getLocale();
   return FormatDate(cx, unwrapped->dateTimeInfo(), locale,
                     unwrapped->UTCTime().toDouble(), FormatSpec::Date,
                     args.rval());
@@ -4400,10 +4391,7 @@ static bool date_toString(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Steps 3-4.
-  const char* locale = unwrapped->realm()->getLocale();
-  if (!locale) {
-    return false;
-  }
+  auto locale = unwrapped->realm()->getLocale();
   return FormatDate(cx, unwrapped->dateTimeInfo(), locale,
                     unwrapped->UTCTime().toDouble(), FormatSpec::DateTime,
                     args.rval());
@@ -4579,10 +4567,7 @@ static bool NewDateObject(JSContext* cx, const CallArgs& args, ClippedTime t) {
  * ES2025 draft rev 76814cbd5d7842c2a99d28e6e8c7833f1de5bee0
  */
 static bool ToDateString(JSContext* cx, const CallArgs& args, ClippedTime t) {
-  const char* locale = cx->realm()->getLocale();
-  if (!locale) {
-    return false;
-  }
+  auto locale = cx->realm()->getLocale();
   return FormatDate(cx, cx->realm()->getDateTimeInfo(), locale, t.toDouble(),
                     FormatSpec::DateTime, args.rval());
 }

@@ -124,7 +124,7 @@ add_task(
         ],
       },
       async () => {
-        await TranslationsParent.AIFeature.disable();
+        await TranslationsParent.AIFeature.block();
       }
     );
     await aboutTranslationsTestUtils.assertIsVisible(
@@ -166,7 +166,7 @@ add_task(
         ],
       },
       async () => {
-        await TranslationsParent.AIFeature.disable();
+        await TranslationsParent.AIFeature.block();
       }
     );
     await aboutTranslationsTestUtils.assertIsVisible(
@@ -324,7 +324,7 @@ add_task(
         ],
       },
       async () => {
-        await TranslationsParent.AIFeature.disable();
+        await TranslationsParent.AIFeature.block();
       }
     );
 

@@ -3030,8 +3030,10 @@ pref("signon.signupDetection.confidenceThreshold",     "0.75");
 
 #ifdef NIGHTLY_BUILD
   pref("signon.rustMirror.enabled", true);
+  pref("signon.rustMirror.collectFailedOrigins", true);
 #else
   pref("signon.rustMirror.enabled", false);
+  pref("signon.rustMirror.collectFailedOrigins", false);
 #endif
 
 // Satchel (Form Manager) prefs

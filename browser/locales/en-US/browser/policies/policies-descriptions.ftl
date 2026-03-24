@@ -11,6 +11,8 @@
 
 policy-3rdparty = Set policies that WebExtensions can access via chrome.storage.managed.
 
+policy-AIControls = Configure AI controls.
+
 policy-AllowedDomainsForApps = Define domains allowed to access Google Workspace.
 
 policy-AllowFileSelectionDialogs = Allow file selection dialogs.
@@ -216,6 +218,8 @@ policy-PrivateBrowsingModeAvailability = Set availability of private browsing mo
 policy-PromptForDownloadLocation = Ask where to save files when downloading.
 
 policy-Proxy = Configure proxy settings.
+
+policy-RelaunchRequired = Require { -brand-short-name } to be relaunched within a given period and notify the user of the upcoming relaunch.
 
 policy-RequestedLocales = Set the list of requested locales for the application in order of preference.
 

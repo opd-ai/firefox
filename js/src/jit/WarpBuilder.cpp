@@ -1196,17 +1196,6 @@ bool WarpBuilder::build_TakeDisposeCapability(BytecodeLocation loc) {
   current->push(ins);
   return resumeAfter(ins, loc);
 }
-
-bool WarpBuilder::build_CreateSuppressedError(BytecodeLocation loc) {
-  MDefinition* suppressed = current->pop();
-  MDefinition* error = current->pop();
-
-  MCreateSuppressedError* ins =
-      MCreateSuppressedError::New(alloc(), error, suppressed);
-  current->add(ins);
-  current->push(ins);
-  return true;
-}
 #endif
 
 // Returns true iff the MTest added for |op| has a true-target corresponding
@@ -3326,6 +3315,12 @@ bool WarpBuilder::build_Exception(BytecodeLocation) {
 bool WarpBuilder::build_ExceptionAndStack(BytecodeLocation) {
   MOZ_CRASH("Unreachable because we skip catch-blocks");
 }
+
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+bool WarpBuilder::build_CreateSuppressedError(BytecodeLocation) {
+  MOZ_CRASH("Unreachable because we skip catch-blocks");
+}
+#endif
 
 bool WarpBuilder::build_Throw(BytecodeLocation loc) {
   MDefinition* def = current->pop();

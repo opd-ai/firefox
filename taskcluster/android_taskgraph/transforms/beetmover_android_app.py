@@ -10,11 +10,10 @@ import logging
 from gecko_taskgraph.transforms.task import (
     task_description_schema as gecko_task_description_schema,
 )
+from gecko_taskgraph.util.scriptworker import generate_beetmover_artifact_map
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import optionally_keyed_by, resolve_keyed_by
 from voluptuous import ALLOW_EXTRA, Optional, Required, Schema
-
-from android_taskgraph.util.scriptworker import generate_beetmover_artifact_map
 
 logger = logging.getLogger(__name__)
 

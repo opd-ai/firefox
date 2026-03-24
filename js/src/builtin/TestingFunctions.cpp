@@ -108,6 +108,7 @@
 #include "js/Wrapper.h"
 #include "threading/CpuCount.h"
 #include "util/DifferentialTesting.h"
+#include "util/LanguageId.h"
 #include "util/StringBuilder.h"
 #include "util/Text.h"
 #include "vm/BooleanObject.h"
@@ -8923,7 +8924,13 @@ static bool GetRealmLocale(JSContext* cx, unsigned argc, Value* vp) {
   }
 
 #ifdef JS_HAS_INTL_API
-  auto* str = cx->global()->globalIntlData().defaultLocale(cx);
+  auto defaultLocale = LanguageId::und();
+  if (!cx->global()->globalIntlData().defaultLocale(cx, &defaultLocale)) {
+    return false;
+  }
+
+  auto* str =
+      NewStringCopy<CanGC>(cx, std::string_view{defaultLocale.toString()});
   if (!str) {
     return false;
   }

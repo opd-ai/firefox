@@ -9,6 +9,7 @@
 
 #include "gc/Barrier.h"
 #include "js/TypeDecls.h"
+#include "util/LanguageId.h"
 #include "vm/JSObject.h"
 #include "vm/StringType.h"
 #include "vm/SymbolType.h"
@@ -38,12 +39,12 @@ class GlobalIntlData {
    * value controls the value returned by defaultLocale() that's what's
    * *actually* used.
    */
-  GCPtr<JSLinearString*> realmLocale_;
+  LanguageId realmLocale_ = LanguageId::und();
 
   /**
    * The actual default locale.
    */
-  GCPtr<JSLinearString*> defaultLocale_;
+  LanguageId defaultLocale_ = LanguageId::und();
 
   /**
    * Time zone information provided by ICU or the embedding. See
@@ -136,7 +137,7 @@ class GlobalIntlData {
   /**
    * Returns the BCP 47 language tag for the global's current locale.
    */
-  JSLinearString* defaultLocale(JSContext* cx);
+  bool defaultLocale(JSContext* cx, LanguageId* result);
 
   /**
    * Returns the IANA time zone name for the global's current time zone.

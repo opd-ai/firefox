@@ -16,6 +16,7 @@ namespace js {
 
 class ArrayObject;
 class GlobalObject;
+class LanguageId;
 
 /* Initialize the String class, returning its prototype object. */
 extern JSObject* InitStringClass(JSContext* cx, Handle<GlobalObject*> global);
@@ -83,7 +84,7 @@ extern JSLinearString* StringFromCharCode(JSContext* cx, int32_t charCode);
 extern JSLinearString* StringFromCodePoint(JSContext* cx, char32_t codePoint);
 
 #if JS_HAS_INTL_API
-bool LocaleHasDefaultCaseMapping(const char* locale);
+bool LocaleHasDefaultCaseMapping(LanguageId locale);
 #endif
 
 } /* namespace js */

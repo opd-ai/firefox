@@ -64,10 +64,7 @@ void js::HasSeenArrayExceedsInt32LengthFuse::popFuse(JSContext* cx) {
 
 bool js::DefaultLocaleHasDefaultCaseMappingFuse::checkInvariant(JSContext* cx) {
 #if JS_HAS_INTL_API
-  const char* locale = cx->runtime()->getDefaultLocaleIfInitialized();
-  if (!locale) {
-    return true;
-  }
+  auto locale = cx->runtime()->getDefaultLocaleIfInitialized();
   return LocaleHasDefaultCaseMapping(locale);
 #else
   return true;

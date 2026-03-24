@@ -8554,10 +8554,11 @@
   value: 200*1024
   mirror: always
 
-# The maximum size, in bytes, of the decoded images we cache.
+# The maximum size, in bytes, of the compressed size of images we cache that
+# are unused.
 - name: image.cache.size
   type: int32_t
-  value: 5*1024*1024
+  value: 20*1024*1024
   mirror: once
 
 # A weight, from 0-1000, to place on time when comparing to size.

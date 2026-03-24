@@ -287,6 +287,7 @@ class TrustedHTMLOrString;
 class OwningTrustedHTMLOrString;
 enum class ViewportFitType : uint8_t;
 class ViewTransition;
+struct ViewTransitionParams;
 class ViewTransitionUpdateCallbackOrStartViewTransitionOptions;
 class WakeLockSentinel;
 class WindowContext;
@@ -4130,6 +4131,16 @@ class Document : public nsINode,
   void ScheduleViewTransitionUpdateCallback(ViewTransition* aVt);
   MOZ_CAN_RUN_SCRIPT void FlushViewTransitionUpdateCallbackQueue();
 
+  // Returns some ViewTransition::TypeList or Nothing if skip transition.
+  // https://drafts.csswg.org/css-view-transitions-2/#resolve-view-transition-rule
+  Maybe<nsTArray<RefPtr<nsAtom>>> ResolveViewTransitionRule();
+
+  void SetInboundViewTransitionParams(UniquePtr<ViewTransitionParams> aParams);
+
+  // Returns some ViewTransition or Nothing if skip transition.
+  // https://drafts.csswg.org/css-view-transitions-2/#resolve-inbound-cross-document-view-transition
+  Maybe<RefPtr<ViewTransition>> ResolveInboundCrossDocumentViewTransition();
+
   // Getter for PermissionDelegateHandler. Performs lazy initialization.
   PermissionDelegateHandler* GetPermissionDelegateHandler();
 
@@ -5717,6 +5728,9 @@ class Document : public nsINode,
   RefPtr<ChromeObserver> mChromeObserver;
 
   RefPtr<HTMLAllCollection> mAll;
+
+  // https://drafts.csswg.org/css-view-transitions-2/#document-inbound-view-transition-params
+  UniquePtr<ViewTransitionParams> mInboundViewTransitionParams;
 
   // The active view transition.
   // https://drafts.csswg.org/css-view-transitions-1/#document-active-view-transition

@@ -812,7 +812,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   DataMutex<TimeStamp> mLastActiveTabLoadOptimizationHit{
       "nsHttpConnectionMgr::LastActiveTabLoadOptimization"};
 
-  Mutex mHttpExclusionLock MOZ_UNANNOTATED{"nsHttpHandler::HttpExclusion"};
+  Mutex mHttpExclusionLock{"nsHttpHandler::HttpExclusion"};
 
  public:
   [[nodiscard]] uint64_t NewChannelId();
@@ -835,8 +835,10 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 #endif
 
  private:
-  nsTHashSet<nsCString> mExcludedHttp2Origins;
-  nsTHashSet<nsCString> mExcludedHttp3Origins;
+  nsTHashSet<nsCString> mExcludedHttp2Origins
+      MOZ_GUARDED_BY(mHttpExclusionLock);
+  nsTHashSet<nsCString> mExcludedHttp3Origins
+      MOZ_GUARDED_BY(mHttpExclusionLock);
   nsTHashSet<nsCString> mExcluded0RttTcpOrigins;
   // A set of hosts that we should not upgrade to HTTPS with HTTPS RR.
   nsTHashSet<nsCString> mExcludedHostsForHTTPSRRUpgrade;

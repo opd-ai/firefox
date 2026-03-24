@@ -4431,10 +4431,6 @@ void BrowsingContext::SetActiveSessionHistoryEntry(
     const Maybe<nsPoint>& aPreviousScrollPos, SessionHistoryInfo* aInfo,
     SessionHistoryInfo* aPreviousActiveEntry, uint32_t aLoadType,
     uint32_t aUpdatedCacheKey, bool aUpdateLength) {
-  if (IsTop() &&
-      !nsDocShell::ShouldAddToSessionHistory(aInfo->GetURI(), nullptr)) {
-    aInfo->SetTransient();
-  }
   if (XRE_IsContentProcess()) {
     // XXX Why we update cache key only in content process case?
     if (aUpdatedCacheKey != 0) {

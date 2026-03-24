@@ -4033,11 +4033,9 @@ JS_PUBLIC_API bool JS_SetDefaultLocale(JSRuntime* rt, const char* locale) {
 
 JS_PUBLIC_API UniqueChars JS_GetDefaultLocale(JSContext* cx) {
   AssertHeapIsIdle();
-  if (const char* locale = cx->runtime()->getDefaultLocale()) {
-    return DuplicateString(cx, locale);
-  }
 
-  return nullptr;
+  auto locale = cx->runtime()->getDefaultLocale().toString();
+  return DuplicateString(cx, locale.data(), locale.length());
 }
 
 JS_PUBLIC_API void JS_ResetDefaultLocale(JSRuntime* rt) {

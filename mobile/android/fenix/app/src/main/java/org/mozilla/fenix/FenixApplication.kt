@@ -556,12 +556,16 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     }
 
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
-    private fun queueIntegrityClientWarmUp(queue: RunWhenReadyQueue) =
+    private fun queueIntegrityClientWarmUp(queue: RunWhenReadyQueue) {
+        if (!Config.channel.isReleased) {
+            return
+        }
         runOnVisualCompleteness(queue) {
             GlobalScope.launch(IO) {
                 components.integrityClient.warmUp()
             }
         }
+    }
 
     @OptIn(DelicateCoroutinesApi::class, ExperimentalAndroidComponentsApi::class) // GlobalScope usage
     private fun queueNimbusFetchInForeground(queue: RunWhenReadyQueue) =

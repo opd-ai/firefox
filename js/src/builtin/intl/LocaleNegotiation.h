@@ -10,11 +10,13 @@
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/EnumTypeTraits.h"
+#include "mozilla/Maybe.h"
 
 #include <stdint.h>
 
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
+#include "util/LanguageId.h"
 
 class JSLinearString;
 
@@ -71,8 +73,7 @@ ArrayObject* CanonicalizeLocaleList(JSContext* cx,
  * Spec: RFC 4647, section 3.4.
  */
 bool BestAvailableLocale(JSContext* cx, AvailableLocaleKind availableLocales,
-                         JS::Handle<JSLinearString*> locale,
-                         JS::MutableHandle<JSLinearString*> result);
+                         LanguageId locale, mozilla::Maybe<LanguageId>* result);
 
 /**
  * Locale data selection for ResolveLocale.
@@ -137,7 +138,7 @@ class LocaleOptions final {
  * Resolved locale returned from the ResolveLocale operation.
  */
 class ResolvedLocale final {
-  JSLinearString* dataLocale_ = nullptr;
+  LanguageId dataLocale_ = LanguageId::und();
   mozilla::EnumeratedArray<UnicodeExtensionKey, JSLinearString*> extensions_{};
   mozilla::EnumSet<UnicodeExtensionKey> keywords_{};
 
@@ -148,7 +149,7 @@ class ResolvedLocale final {
    * Return the resolved data locale. Does not include any Unicode extension
    * sequences.
    */
-  auto* dataLocale() const { return dataLocale_; }
+  auto dataLocale() const { return dataLocale_; }
 
   /**
    * Return the Unicode extension value for the requested key.
@@ -166,7 +167,7 @@ class ResolvedLocale final {
   JSLinearString* toLocale(JSContext* cx) const;
 
   // Setter functions called in ResolveLocale to initialize the resolved locale.
-  void setDataLocale(JSLinearString* dataLocale) { dataLocale_ = dataLocale; }
+  void setDataLocale(LanguageId dataLocale) { dataLocale_ = dataLocale; }
   void setUnicodeExtension(UnicodeExtensionKey key, JSLinearString* extension) {
     extensions_[key] = extension;
   }
@@ -174,8 +175,7 @@ class ResolvedLocale final {
     keywords_ = keywords;
   }
 
-  // Helper methods for WrappedPtrOperations.
-  auto dataLocaleDoNotUse() const { return &dataLocale_; }
+  // Helper method for WrappedPtrOperations.
   auto extensionDoNotUse(UnicodeExtensionKey key) const {
     return &extensions_[key];
   }
@@ -214,7 +214,7 @@ ArrayObject* SupportedLocalesOf(JSContext* cx,
  * default locale (perhaps via fallback, e.g. supporting "de-CH" through "de"
  * support implied by a "de-DE" locale). Otherwise uses the last-ditch locale.
  */
-JSLinearString* ComputeDefaultLocale(JSContext* cx);
+bool ComputeDefaultLocale(JSContext* cx, LanguageId* result);
 
 }  // namespace js::intl
 
@@ -257,10 +257,7 @@ class WrappedPtrOperations<intl::ResolvedLocale, Wrapper> {
   }
 
  public:
-  JS::Handle<JSLinearString*> dataLocale() const {
-    return JS::Handle<JSLinearString*>::fromMarkedLocation(
-        container().dataLocaleDoNotUse());
-  }
+  LanguageId dataLocale() const { return container().dataLocale(); }
   JS::Handle<JSLinearString*> extension(intl::UnicodeExtensionKey key) const {
     return JS::Handle<JSLinearString*>::fromMarkedLocation(
         container().extensionDoNotUse(key));
@@ -279,9 +276,7 @@ class MutableWrappedPtrOperations<intl::ResolvedLocale, Wrapper>
   auto& container() { return static_cast<Wrapper*>(this)->get(); }
 
  public:
-  void setDataLocale(JSLinearString* locale) {
-    container().setDataLocale(locale);
-  }
+  void setDataLocale(LanguageId locale) { container().setDataLocale(locale); }
   void setUnicodeExtension(intl::UnicodeExtensionKey key,
                            JSLinearString* extension) {
     container().setUnicodeExtension(key, extension);

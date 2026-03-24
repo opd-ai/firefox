@@ -111,9 +111,8 @@ class Table : public ShareableBase<Table> {
   void setNull(uint32_t address);
 
   // Copy entry from |srcTable| at |srcIndex| to this table at |dstIndex|.  Used
-  // by table.copy.  May OOM if it needs to box up a function during an upcast.
-  [[nodiscard]] bool copy(JSContext* cx, const Table& srcTable,
-                          uint32_t dstIndex, uint32_t srcIndex);
+  // by table.copy.
+  void copy(const Table& srcTable, uint32_t dstIndex, uint32_t srcIndex);
 
   // grow() returns (uint32_t)-1 if it could not grow.
   [[nodiscard]] uint32_t grow(uint32_t delta);

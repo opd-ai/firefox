@@ -555,6 +555,7 @@ void js::RemapDeadWrapper(JSContext* cx, HandleObject wobj,
   MOZ_ASSERT(!newTarget->is<FinalizationRecordObject>());
 
   AutoDisableProxyCheck adpc;
+  AutoTouchingGrayThings atgt;
 
   // Suppress GC while we manipulate the wrapper map so that it can't observe
   // intervening state.

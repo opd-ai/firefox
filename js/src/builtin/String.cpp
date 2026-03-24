@@ -52,6 +52,7 @@
 #include "js/StableStringChars.h"
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
+#include "util/LanguageId.h"
 #include "util/StringBuilder.h"
 #include "util/Unicode.h"
 #include "vm/GlobalObject.h"
@@ -947,39 +948,29 @@ static bool str_toLowerCase(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 #if JS_HAS_INTL_API
-// Lithuanian, Turkish, and Azeri have language dependent case mappings.
-static constexpr char LanguagesWithSpecialCasing[][3] = {"lt", "tr", "az"};
+static const char* CaseMappingLocale(std::string_view lang) {
+  MOZ_ASSERT(lang.length() >= 2, "lang is a valid language tag");
 
-bool js::LocaleHasDefaultCaseMapping(const char* locale) {
-  MOZ_ASSERT(locale);
+  // Lithuanian, Turkish, and Azeri have language dependent case mappings.
+  static constexpr std::string_view LanguagesWithSpecialCasing[] = {
+      "lt",
+      "tr",
+      "az",
+  };
 
-  size_t languageSubtagLength;
-  if (auto* sep = strchr(locale, '-')) {
-    languageSubtagLength = sep - locale;
-  } else {
-    languageSubtagLength = std::strlen(locale);
-  }
-
-  // Invalid locale identifiers default to the last-ditch locale "en-GB", which
-  // has default case mapping.
-  mozilla::Span<const char> span{locale, languageSubtagLength};
-  {
-    // Tell the analysis the |IsStructurallyValidLanguageTag| function can't GC.
-    JS::AutoSuppressGCAnalysis nogc;
-    if (!mozilla::intl::IsStructurallyValidLanguageTag(span)) {
-      return true;
+  for (const auto& language : LanguagesWithSpecialCasing) {
+    if (lang == language) {
+      return language.data();
     }
   }
+  return nullptr;
+}
 
-  mozilla::intl::LanguageSubtag subtag{span};
+bool js::LocaleHasDefaultCaseMapping(LanguageId locale) {
+  auto language = locale.language();
 
-  // Canonical case for the language subtag is lower-case
-  {
-    // Tell the analysis the |ToLowerCase| function can't GC.
-    JS::AutoSuppressGCAnalysis nogc;
-
-    subtag.ToLowerCase();
-  }
+  mozilla::intl::LanguageSubtag subtag{
+      mozilla::Span{language.data(), language.length()}};
 
   // Replace outdated language subtags. Skips complex language mappings, which
   // is okay because none of the languages with special casing are affected by
@@ -992,10 +983,9 @@ bool js::LocaleHasDefaultCaseMapping(const char* locale) {
   }
 
   // Check for languages which don't use the default case mapping algorithm.
-  for (const auto& language : LanguagesWithSpecialCasing) {
-    if (subtag.EqualTo(language)) {
-      return false;
-    }
+  auto tagSpan = subtag.Span();
+  if (CaseMappingLocale(std::string_view{tagSpan.data(), tagSpan.size()})) {
+    return false;
   }
 
   // Simple locale with default case mapping. (Or an invalid locale which
@@ -1010,12 +1000,11 @@ static const char* CaseMappingLocale(JSLinearString* locale) {
   // only need to compare the first two characters to find a matching locale.
   // ES2017 Intl, §9.2.2 BestAvailableLocale
   if (locale->length() == 2 || locale->latin1OrTwoByteChar(2) == '-') {
-    for (const auto& language : LanguagesWithSpecialCasing) {
-      if (locale->latin1OrTwoByteChar(0) == language[0] &&
-          locale->latin1OrTwoByteChar(1) == language[1]) {
-        return language;
-      }
-    }
+    char chars[] = {
+        char(locale->latin1OrTwoByteChar(0)),
+        char(locale->latin1OrTwoByteChar(1)),
+    };
+    return CaseMappingLocale(std::string_view{chars, 2});
   }
 
   return nullptr;
@@ -1041,18 +1030,18 @@ static JSLinearString* TransformCase(JSContext* cx, Handle<JSString*> string,
   }
 
   // Steps 2-3.
-  JSLinearString* requestedLocale;
+  const char* locale;
   if (!requestedLocales.empty()) {
-    requestedLocale = requestedLocales[0];
+    locale = CaseMappingLocale(requestedLocales[0]);
   } else {
-    requestedLocale = cx->global()->globalIntlData().defaultLocale(cx);
-    if (!requestedLocale) {
+    auto defaultLocale = LanguageId::und();
+    if (!cx->global()->globalIntlData().defaultLocale(cx, &defaultLocale)) {
       return nullptr;
     }
+    locale = CaseMappingLocale(defaultLocale.language());
   }
 
   // Steps 4-10.
-  const char* locale = CaseMappingLocale(requestedLocale);
   if (!locale) {
     // Call the default case conversion methods for language independent casing.
     return targetCase == TargetCase::Lower ? StringToLowerCase(cx, string)

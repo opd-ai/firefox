@@ -18,6 +18,7 @@
 #include "js/Utility.h"
 #include "js/Vector.h"
 #include "threading/ExclusiveData.h"
+#include "util/LanguageId.h"
 
 #if JS_HAS_INTL_API
 #  include "mozilla/intl/ICUError.h"
@@ -232,7 +233,7 @@ class DateTimeInfo {
    */
   static bool timeZoneDisplayName(DateTimeInfo* dtInfo,
                                   TimeZoneDisplayNameVector& result,
-                                  int64_t utcMilliseconds, const char* locale) {
+                                  int64_t utcMilliseconds, LanguageId locale) {
     if (MOZ_UNLIKELY(dtInfo)) {
       return dtInfo->internalTimeZoneDisplayName(result, utcMilliseconds,
                                                  locale);
@@ -387,7 +388,7 @@ class DateTimeInfo {
    * Cached names of the standard and daylight savings display names of the
    * current time zone for the default locale.
    */
-  JS::UniqueChars locale_;
+  LanguageId locale_ = LanguageId::und();
   JS::UniqueTwoByteChars standardName_;
   JS::UniqueTwoByteChars daylightSavingsName_;
 #else
@@ -447,7 +448,7 @@ class DateTimeInfo {
                                         TimeZoneOffset offset);
 
   bool internalTimeZoneDisplayName(TimeZoneDisplayNameVector& result,
-                                   int64_t utcMilliseconds, const char* locale);
+                                   int64_t utcMilliseconds, LanguageId locale);
 
   bool internalTimeZoneId(TimeZoneIdentifierVector& result);
 

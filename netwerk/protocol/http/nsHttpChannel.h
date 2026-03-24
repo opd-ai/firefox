@@ -318,6 +318,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   // Add Sec-Fetch-Storage-Access headers based on cookie partitioning
   void AddStorageAccessHeadersToRequest();
+  bool DispatchRelease();
 
  public:
   // returns whether this channel is a retry after receiving the
@@ -557,8 +558,9 @@ class nsHttpChannel final : public HttpBaseChannel,
   void SetCachedContentType();
 
  private:
-  // this section is for main-thread-only object
-  // all the references need to be proxy released on main thread.
+  // --- MAIN THREAD ONLY OBJECTS ---
+  // this section is for main-thread-only objects
+  // all the references need to be released on main thread.
   // auth specific data
   nsCOMPtr<nsIHttpChannelAuthProvider> mAuthProvider;
   nsCOMPtr<nsIURI> mRedirectURI;
@@ -583,8 +585,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   // versions of itself, these may have the same URI (but likely different
   // hashes).
 
-  // Proxy release all members above on main thread.
-  void ReleaseMainThreadOnlyReferences();
+  // --- END OF MAIN THREAD ONLY OBJECTS SECTION ---
 
   // Called after the channel is made aware of its tracking status in order
   // to readjust the referrer if needed according to the referrer default

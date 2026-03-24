@@ -1,0 +1,88 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  </head>
+  <body>
+    <script>
+      "use strict";
+
+      SimpleTest.waitForExplicitFinish();
+
+      async function runTest() {
+        const tools = SpecialPowers.Cc["@mozilla.org/image/tools;1"].getService(
+          SpecialPowers.Ci.imgITools
+        );
+        tools.getImgCacheForDocument(document).clearCache(false);
+
+        const BASE_URL = "big.png?run=" + Math.random() + "&";
+
+        const cacheSize = SpecialPowers.getIntPref("image.cache.size");
+        ok(cacheSize > 0 && cacheSize < 1024 * 1024 * 1024,
+           `image.cache.size (${cacheSize}) is a valid positive size`);
+
+        const headResponse = await fetch("big.png", { method: "HEAD" });
+        const fileSize = parseInt(headResponse.headers.get("content-length"), 10);
+        ok(fileSize > 0 && fileSize < cacheSize,
+           `big.png file size (${fileSize}) is smaller than the cache limit`);
+
+        if (cacheSize <= 0 || !(fileSize > 0 && fileSize < cacheSize)) {
+          SimpleTest.finish();
+          return;
+        }
+
+        // Load enough copies to exceed the cache limit, with 20 extra for margin.
+        const COUNT = Math.ceil(cacheSize / fileSize) + 20;
+
+        function loadImage(url) {
+          return new Promise((resolve, reject) => {
+            const img = document.createElement("img");
+            img.width = 10;
+            img.height = 10;
+            img.src = url;
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            document.body.appendChild(img);
+          });
+        }
+
+        // Load images one at a time, clearing each after decode and a frame,
+        // so that the cache eviction order matches the load order.
+        for (let i = 0; i < COUNT; i++) {
+          const img = await loadImage(BASE_URL + i);
+          await img.decode();
+          await new Promise(resolve => requestAnimationFrame(resolve));
+          img.src = "";
+        }
+
+        for (let i = 0; i < 10; i++) {
+          await new Promise(resolve => requestAnimationFrame(resolve));
+        }
+
+        // Load one more image to ensure all pending cache tasks have been flushed.
+        await loadImage(BASE_URL + COUNT);
+
+        // If big.png?0 or big.png?1 are still in cache, setting src synchronously
+        // makes img.complete true. If they were evicted, the load is async and
+        // complete is false.
+        const img0 = document.createElement("img");
+        img0.width = 10;
+        img0.height = 10;
+        document.body.appendChild(img0);
+        img0.src = BASE_URL + "0";
+        ok(!img0.complete, "big.png?0 was evicted from the cache");
+
+        const img1 = document.createElement("img");
+        img1.width = 10;
+        img1.height = 10;
+        document.body.appendChild(img1);
+        img1.src = BASE_URL + "1";
+        ok(!img1.complete, "big.png?1 was evicted from the cache");
+
+        SimpleTest.finish();
+      }
+
+      runTest();
+    </script>
+  </body>
+</html>

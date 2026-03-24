@@ -17,6 +17,7 @@ UNIFIED_SOURCES += [
     "AllocationLogging.cpp",
     "AllocPolicy.cpp",
     "CompleteFile.cpp",
+    "DefaultLocale.cpp",
     "DumpFunctions.cpp",
     "Identifier.cpp",
     "NativeStack.cpp",

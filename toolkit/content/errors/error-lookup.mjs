@@ -52,6 +52,8 @@ export function resolveL10nArgs(l10nConfig, l10nArgValues) {
     errorMessage: l10nArgValues.errorInfo?.errorMessage ?? "",
     validHosts: l10nArgValues.domainMismatchNames ?? "",
     mitm: l10nArgValues.mitmName ?? "",
+    responsestatus: l10nArgValues.errorInfo?.responseStatus ?? 0,
+    responsestatustext: l10nArgValues.errorInfo?.responseStatusText ?? "",
   };
 
   if (typeof l10nConfig.dataL10nId === "function") {

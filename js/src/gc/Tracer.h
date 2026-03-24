@@ -147,7 +147,7 @@ void AssertShouldMarkInZone(GCMarker* marker, T* thing) {}
 // wrapped in the WeakCache<> template to perform the appropriate sweeping.
 
 template <typename T>
-inline void TraceEdge(JSTracer* trc, const WriteBarriered<T>* thingp,
+inline void TraceEdge(JSTracer* trc, const BarrieredBase<T>* thingp,
                       const char* name) {
   gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp->unbarrieredAddress()),
                         name);
@@ -184,9 +184,10 @@ inline void TraceCellHeaderEdge(JSTracer* trc, gc::CellWithGCPointer<T>* thingp,
 // tracing.
 
 template <typename T>
-inline void TraceNullableEdge(JSTracer* trc, const WriteBarriered<T>* thingp,
+inline void TraceNullableEdge(JSTracer* trc, const BarrieredBase<T>* thingp,
                               const char* name) {
-  if (InternalBarrierMethods<T>::isMarkable(thingp->get())) {
+  T thing = *thingp->unbarrieredAddress();
+  if (InternalBarrierMethods<T>::isMarkable(thing)) {
     TraceEdge(trc, thingp, name);
   }
 }
@@ -372,7 +373,7 @@ void TraceManuallyBarrieredCrossCompartmentEdge(JSTracer* trc, JSObject* src,
 // destination thing is not being GC'd, then the edge will not be traced.
 template <typename T>
 void TraceCrossCompartmentEdge(JSTracer* trc, JSObject* src,
-                               const WriteBarriered<T>* dst, const char* name) {
+                               const BarrieredBase<T>* dst, const char* name) {
   TraceManuallyBarrieredCrossCompartmentEdge(
       trc, src, gc::ConvertToBase(dst->unbarrieredAddress()), name);
 }
@@ -401,7 +402,7 @@ void TraceWeakMapKeyEdgeInternal(JSTracer* trc, Zone* weakMapZone, T* thingp,
 
 template <typename T>
 inline void TraceWeakMapKeyEdge(JSTracer* trc, Zone* weakMapZone,
-                                const WriteBarriered<T>* thingp,
+                                const BarrieredBase<T>* thingp,
                                 const char* name) {
   TraceWeakMapKeyEdgeInternal(
       trc, weakMapZone, gc::ConvertToBase(thingp->unbarrieredAddress()), name);

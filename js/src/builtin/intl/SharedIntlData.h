@@ -20,6 +20,7 @@
 #include "js/Result.h"
 #include "js/RootingAPI.h"
 #include "js/Utility.h"
+#include "util/LanguageId.h"
 #include "vm/StringType.h"
 
 namespace mozilla::intl {
@@ -258,19 +259,19 @@ class SharedIntlData {
       JSContext* cx);
 
  private:
-  using Locale = JSAtom*;
+  using Locale = LanguageId;
 
   struct LocaleHasher {
-    struct Lookup : LinearStringLookup {
-      explicit Lookup(const JSLinearString* locale);
-      explicit Lookup(std::string_view locale);
-    };
+    using Lookup = Locale;
 
-    static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }
-    static bool match(Locale key, const Lookup& lookup);
+    static js::HashNumber hash(const Lookup& lookup) { return lookup.hash(); }
+
+    static bool match(Locale key, const Lookup& lookup) {
+      return key == lookup;
+    }
   };
 
-  using LocaleSet = GCHashSet<Locale, LocaleHasher, SystemAllocPolicy>;
+  using LocaleSet = HashSet<Locale, LocaleHasher, SystemAllocPolicy>;
 
   // Set of available locales for all Intl service constructors except Collator,
   // which uses its own set.
@@ -314,8 +315,7 @@ class SharedIntlData {
    * service constructor. Otherwise sets |available| to false.
    */
   [[nodiscard]] bool isAvailableLocale(JSContext* cx, AvailableLocaleKind kind,
-                                       JS::Handle<JSLinearString*> locale,
-                                       bool* available);
+                                       LanguageId locale, bool* available);
 
   /**
    * Returns all available locales for |kind|.
@@ -362,8 +362,7 @@ class SharedIntlData {
    * Sets |isUpperFirst| to true if |locale| sorts upper-case characters
    * before lower-case characters.
    */
-  bool isUpperCaseFirst(JSContext* cx, JS::Handle<JSLinearString*> locale,
-                        bool* isUpperFirst);
+  bool isUpperCaseFirst(JSContext* cx, LanguageId locale, bool* isUpperFirst);
 
  private:
 #if DEBUG
@@ -381,7 +380,7 @@ class SharedIntlData {
   /**
    * Sets |ignorePunctuation| to true if |locale| ignores punctuation.
    */
-  bool isIgnorePunctuation(JSContext* cx, JS::Handle<JSLinearString*> locale,
+  bool isIgnorePunctuation(JSContext* cx, LanguageId locale,
                            bool* ignorePunctuation);
 
  private:

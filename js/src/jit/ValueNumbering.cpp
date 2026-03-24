@@ -6,6 +6,7 @@
 
 #include "jit/ValueNumbering.h"
 
+#include "jit/BranchPruning.h"
 #include "jit/IonAnalysis.h"
 #include "jit/JitSpewer.h"
 #include "jit/MIRGenerator.h"

@@ -2181,18 +2181,6 @@ static bool NonISOMonthDayToISOReferenceDate(JSContext* cx, CalendarId calendar,
   } else {
     MOZ_ASSERT(monthCode != MonthCode{});
 
-    if (calendar == CalendarId::Chinese || calendar == CalendarId::Dangi) {
-      int32_t referenceYear =
-          EastAsianCalendarReferenceISOYear(calendar, monthCode, day);
-      if (referenceYear == 0) {
-        if (overflow == TemporalOverflow::Reject) {
-          ReportCalendarFieldOverflow(cx, "day", day);
-          return false;
-        }
-        monthCode = MonthCode{monthCode.ordinal()};
-      }
-    }
-
     // Constrain `day` to maximum possible day of the input month.
     int32_t maxDaysInMonth = CalendarDaysInMonth(calendar, monthCode).second;
     if (overflow == TemporalOverflow::Constrain) {
@@ -2204,6 +2192,18 @@ static bool NonISOMonthDayToISOReferenceDate(JSContext* cx, CalendarId calendar,
         ReportCalendarFieldOverflow(cx, "day", day);
         return false;
       }
+    }
+  }
+
+  if (calendar == CalendarId::Chinese || calendar == CalendarId::Dangi) {
+    int32_t referenceYear =
+        EastAsianCalendarReferenceISOYear(calendar, monthCode, day);
+    if (referenceYear == 0) {
+      if (overflow == TemporalOverflow::Reject) {
+        ReportCalendarFieldOverflow(cx, "day", day);
+        return false;
+      }
+      monthCode = MonthCode{monthCode.ordinal()};
     }
   }
 
@@ -2246,13 +2246,8 @@ static bool NonISOMonthDayToISOReferenceDate(JSContext* cx, CalendarId calendar,
 
   *result = ToISODate(date.get());
 
-  // FIXME: spec bug - missing handling for reference years when input fields
-  // have a year component:
-  // https://github.com/tc39/proposal-intl-era-monthcode/issues/113
   MOZ_ASSERT_IF(
-      (calendar == CalendarId::Chinese || calendar == CalendarId::Dangi) &&
-          !(fields.has(CalendarField::Year) ||
-            fields.has(CalendarField::EraYear)),
+      calendar == CalendarId::Chinese || calendar == CalendarId::Dangi,
       result->year ==
           EastAsianCalendarReferenceISOYear(calendar, monthCode, day));
   return true;

@@ -213,7 +213,7 @@ extern JS_PUBLIC_API JSObject* CompileJsonModule(
  * https://tc39.es/ecma262/#sec-create-default-export-synthetic-module
  */
 extern JS_PUBLIC_API JSObject* CreateDefaultExportSyntheticModule(
-    JSContext* cx, const Value& defaultExport);
+    JSContext* cx, Handle<Value> defaultExport);
 
 /**
  * Parse the given source buffer as a module in the scope of the current global

@@ -533,17 +533,17 @@ static bool ResolveLocale(JSContext* cx, Handle<CollatorObject*> collator) {
       CollatorOptions::IgnorePunctuation::Locale) {
     // If |locale| is the default locale (e.g. da-DK), but only supported
     // through a fallback (da), we need to get the actual data locale first.
-    Rooted<JSLinearString*> dataLocale(cx);
+    mozilla::Maybe<LanguageId> actualLocale{};
     if (!BestAvailableLocale(cx, AvailableLocaleKind::Collator,
-                             resolved.dataLocale(), &dataLocale)) {
+                             resolved.dataLocale(), &actualLocale)) {
       return false;
     }
-    MOZ_ASSERT(dataLocale);
+    MOZ_ASSERT(actualLocale);
 
     auto& sharedIntlData = cx->runtime()->sharedIntlData.ref();
 
     bool ignorePunctuation;
-    if (!sharedIntlData.isIgnorePunctuation(cx, dataLocale,
+    if (!sharedIntlData.isIgnorePunctuation(cx, *actualLocale,
                                             &ignorePunctuation)) {
       return false;
     }

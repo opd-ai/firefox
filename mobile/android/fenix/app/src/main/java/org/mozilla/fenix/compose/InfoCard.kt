@@ -215,7 +215,8 @@ data class InfoCardButtonText(
 )
 
 private class PreviewModelParameterProvider : ThemedValueProvider<InfoType>(
-    enumValues<InfoType>().asSequence(),
+    baseValues = enumValues<InfoType>().asSequence(),
+    getDisplayName = { _, infoType -> infoType.name },
 )
 
 @Composable

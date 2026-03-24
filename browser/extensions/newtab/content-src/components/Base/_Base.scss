@@ -242,7 +242,8 @@ main {
 
 .asrouter-newtab-message-wrapper {
   background-color: var(--background-color-canvas);
-  border: 2px solid var(--card-border-color);
+  // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+  border: 2px solid var(--card-border-color, var(--border-color-card));
   color: var(--text-color);
   border-radius: var(--border-radius-medium);
   margin-block: 0 var(--space-xlarge);

@@ -253,8 +253,6 @@ pref("formhelper.autozoom", true);
 // Optionally send web console output to logcat (bug 1415318)
 pref("geckoview.console.enabled", false);
 
-pref("image.cache.size", 1048576); // bytes
-
 // Inherit locale from the OS, used for multi-locale builds
 pref("intl.locale.requested", "");
 

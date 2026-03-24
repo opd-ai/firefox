@@ -40,6 +40,27 @@ export class AboutNewTabParent extends JSWindowActorParent {
     }
   }
 
+  /**
+   * When newtab is disabled, we show an empty page. For consistency with
+   * about:blank and historical behavior, avoid a persistent SH entry for
+   * it if it's the initial document.
+   */
+  makeTransientIfDisabledAndInitial() {
+    if (Services.prefs.getBoolPref("browser.newtabpage.enabled", true)) {
+      return;
+    }
+
+    const sh = this.browsingContext.sessionHistory;
+    if (!sh || sh.count > 1) {
+      return;
+    }
+
+    const entry = sh.getEntryAtIndex(0);
+    if (entry.URI.spec === "about:newtab") {
+      entry.setTransient();
+    }
+  }
+
   async receiveMessage(message) {
     switch (message.name) {
       case "AboutNewTabVisible":
@@ -88,9 +109,11 @@ export class AboutNewTabParent extends JSWindowActorParent {
         break;
       }
 
-      case "Load":
+      case "Load": {
         this.notifyActivityStreamChannel("onNewTabLoad", message);
+        this.makeTransientIfDisabledAndInitial();
         break;
+      }
 
       case "Unload": {
         let tabDetails = this.getTabDetails();

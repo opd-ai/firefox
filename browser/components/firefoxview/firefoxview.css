@@ -62,6 +62,12 @@
   }
 }
 
+@media (min-width: 72rem) {
+  :root {
+    --fxview-sidebar-width: 320px;
+  }
+}
+
 body {
   display: grid;
   gap: 12px;

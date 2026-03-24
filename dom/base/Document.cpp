@@ -17119,19 +17119,23 @@ void Document::Reveal() {
 
   // Step 3, Let transition be the result of resolving inbound cross-document
   // view-transition for document.
-  // TODO
+  Maybe<RefPtr<ViewTransition>> vt =
+      ResolveInboundCrossDocumentViewTransition();
 
-  // Step 4
+  // Step 4, Fire pagereveal.
   PageRevealEventInit init;
-  // init.mViewTransition = TODO
+  init.mViewTransition = vt.valueOr(nullptr);
 
   RefPtr<PageRevealEvent> event =
       PageRevealEvent::Constructor(win, u"pagereveal"_ns, init);
   event->SetTrusted(true);
   win->DispatchEvent(*event);
 
-  // Step 5, If transition is not null, then:
-  // TODO
+  // Step 5, If transition is not null, then: Activate transition.
+  if (vt.isSome()) {
+    nsAutoMicroTask mt;
+    vt.ref()->Activate();
+  }
 }
 
 void Document::MaybeActiveMediaComponents() {
@@ -19275,6 +19279,85 @@ void Document::PerformPendingViewTransitionOperations() {
 
 void Document::EnsureViewTransitionOperationsHappen() {
   MaybeScheduleRenderingPhases({RenderingPhase::ViewTransitionOperations});
+}
+
+Maybe<nsTArray<RefPtr<nsAtom>>> Document::ResolveViewTransitionRule() {
+  // Step 1. Skip if hidden
+  if (Hidden()) {
+    return Nothing();
+  }
+
+  // Step 2. Let matchingRule be the last '@view-transition' rule in document
+  RefPtr<StyleViewTransitionRule> matchingRule =
+      EnsureStyleSet().GetLastViewTransitionRule();
+
+  // Step 3. Skip if no rule
+  if (!matchingRule) {
+    return Nothing();
+  }
+
+  // Step 4. Skip if navigation: none;
+  const StyleNavigationType nav =
+      Servo_ViewTransitionRule_GetNavigationDescriptor(matchingRule);
+  if (nav == StyleNavigationType::None) {
+    return Nothing();
+  }
+
+  // Step 5. Assert navigation: auto;
+  MOZ_ASSERT(nav == StyleNavigationType::Auto);
+
+  // Step 6-9. Return matchingRule's types descriptor
+  AutoTArray<nsAtom*, 8> atoms;
+  Servo_ViewTransitionRule_GetTypes(matchingRule, &atoms);
+  ViewTransition::TypeList types;
+  types.AppendElements(atoms);
+
+  return Some(std::move(types));
+}
+
+Maybe<RefPtr<ViewTransition>>
+Document::ResolveInboundCrossDocumentViewTransition() {
+  // Step 1, 2. Assert fully active and revealed.
+  MOZ_ASSERT(IsFullyActive());
+  MOZ_ASSERT(mHasBeenRevealed);
+
+  // TODO Step 3. Update opt-in state for outbound transitions.
+  // XXX Maybe we don't need that flag and can just check the rule directly.
+
+  // Step 4. Let inboundViewTransitionParams be document's inbound params.
+  // Step 6. Set document's inbound params to null.
+  auto inboundParams = std::move(mInboundViewTransitionParams);
+
+  // Step 5. If inboundViewTransitionParams is null, return null.
+  if (!inboundParams) {
+    return Nothing();
+  }
+
+  // Step 7. If active view transition is not null, return null.
+  if (mActiveViewTransition) {
+    return Nothing();
+  }
+
+  // Step 8. Let resolvedRule be the result of resolving the @view-transition
+  // rule for document.
+  auto resolvedRule = ResolveViewTransitionRule();
+
+  // Step 9. If resolvedRule is skip transition, then return null.
+  if (resolvedRule.isNothing()) {
+    return Nothing();
+  }
+
+  // Steps 10-14. Set active view transition to a new ViewTransition ...
+  mActiveViewTransition = ViewTransition::CreateCrossDocument(
+      *this, std::move(inboundParams), resolvedRule.extract());
+
+  // Step 15. Return transition.
+  return Some(mActiveViewTransition);
+}
+
+void Document::SetInboundViewTransitionParams(
+    UniquePtr<ViewTransitionParams> aParams) {
+  mInboundViewTransitionParams = std::move(aParams);
 }
 
 Selection* Document::GetSelection(ErrorResult& aRv) {

@@ -75,7 +75,7 @@ hazard
 
 Hazard builds are similar to "regular' builds, but use a compiler extension to
 extract a bunch of data from the build and then analyze that data looking for
-hazardous behaviors.
+hazardous behaviors. See https://firefox-source-docs.mozilla.org/js/HazardAnalysis/index.html
 
 l10n
 ----

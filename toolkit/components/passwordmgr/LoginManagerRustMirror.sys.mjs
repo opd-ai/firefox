@@ -174,6 +174,10 @@ function recordMirrorFailure(runId, operation, error, login = null) {
     "signon.rustMirror.poisoned",
     false
   );
+  const collectFailedOrigins = Services.prefs.getBoolPref(
+    "signon.rustMirror.collectFailedOrigins",
+    false
+  );
 
   const data = {
     metric_version: rustMirrorTelemetryVersion,
@@ -204,6 +208,8 @@ function recordMirrorFailure(runId, operation, error, login = null) {
   };
 
   if (login) {
+    const timeCreated = roundToMonthUTC(login.timeCreated);
+    const timeLastUsed = roundToMonthUTC(login.timeLastUsed);
     data.is_deleted = login.deleted;
 
     const [originError, fixableOriginError] = validateOrigin(login.origin);
@@ -211,6 +217,7 @@ function recordMirrorFailure(runId, operation, error, login = null) {
     data.origin_fixable = !!fixableOriginError;
     const [formActionOriginError, fixableFormActionOriginError] =
       validateOrigin(login.formActionOrigin);
+
     data.form_action_origin_error = formActionOriginError;
     data.form_action_origin_fixable = !!fixableFormActionOriginError;
 
@@ -225,8 +232,12 @@ function recordMirrorFailure(runId, operation, error, login = null) {
     data.has_username_line_break = containsLineBreaks(login.username);
     data.has_username_nul = containsNul(login.username);
 
-    data.time_created = roundToMonthUTC(login.timeCreated);
-    data.time_last_used = roundToMonthUTC(login.timeLastUsed);
+    data.time_created = timeCreated;
+    data.time_last_used = timeLastUsed;
+
+    if (collectFailedOrigins && (originError || formActionOriginError)) {
+      recordOriginFailurePing(login, timeCreated, timeLastUsed);
+    }
   }
 
   Glean.pwmgr.rustWriteFailure.record(data);
@@ -235,6 +246,18 @@ function recordMirrorFailure(runId, operation, error, login = null) {
   if (!poisoned) {
     Services.prefs.setBoolPref("signon.rustMirror.poisoned", true);
   }
+}
+
+function recordOriginFailurePing(login, timeCreated, timeLastUsed) {
+  const data = {
+    metric_version: rustMirrorTelemetryVersion,
+    origin: login.origin ?? "",
+    form_action_origin: login.formActionOrigin ?? "",
+    time_created: timeCreated,
+    time_last_used: timeLastUsed,
+  };
+  Glean.pwmgr.rustOriginFailure.record(data);
+  GleanPings.pwmgrOriginFailure.submit();
 }
 
 function recordMirrorStatus(runId, operation, status) {

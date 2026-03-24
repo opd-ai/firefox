@@ -61,6 +61,7 @@ template struct StyleStrong<StyleStartingStyleRule>;
 template struct StyleStrong<StyleAppearanceBaseRule>;
 template struct StyleStrong<StyleLockedPositionTryRule>;
 template struct StyleStrong<StyleLockedNestedDeclarationsRule>;
+template struct StyleStrong<StyleViewTransitionRule>;
 
 template <typename T>
 inline void StyleOwnedSlice<T>::Clear() {

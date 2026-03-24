@@ -1714,6 +1714,8 @@ bool imgLoader::SetHasNoProxies(imgRequest* aRequest, imgCacheEntry* aEntry) {
     mCacheQueue.Push(aEntry);
   }
 
+  CheckCacheLimits();
+
   return true;
 }
 

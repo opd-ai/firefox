@@ -67,12 +67,33 @@ impl Time {
         }
     }
 
+    /// Return the unitless, raw value.
     #[inline]
-    fn unitless_value(&self) -> CSSFloat {
+    pub fn unitless_value(&self) -> CSSFloat {
         match self.unit {
             TimeUnit::Second => self.seconds,
             TimeUnit::Millisecond => self.seconds * 1000.,
         }
+    }
+
+    /// Return the canonical unit for this value.
+    pub fn canonical_unit(&self) -> Option<&'static str> {
+        Some("s")
+    }
+
+    /// Convert this value to the specified unit, if possible.
+    pub fn to(&self, unit: &str) -> Result<Self, ()> {
+        let unit = match_ignore_ascii_case! { unit,
+            "s" => TimeUnit::Second,
+            "ms" => TimeUnit::Millisecond,
+             _ => return Err(()),
+        };
+
+        Ok(Time {
+            seconds: self.seconds,
+            unit,
+            calc_clamping_mode: None,
+        })
     }
 
     /// Parses a time according to CSS-VALUES § 6.2.

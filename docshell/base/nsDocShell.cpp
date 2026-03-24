@@ -7063,10 +7063,6 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
     aOpenedChannel->SetNotificationCallbacks(this);
   }
 
-  if (mLoadingEntry && mBrowsingContext->IsTop() &&
-      !ShouldAddToSessionHistory(finalURI, aOpenedChannel)) {
-    mLoadingEntry->mInfo.SetTransient();
-  }
   NS_ENSURE_SUCCESS(Embed(viewer, nullptr, false, aOpenedChannel, previousURI),
                     NS_ERROR_FAILURE);
 
@@ -11128,48 +11124,6 @@ void nsDocShell::SetCacheKeyOnHistoryEntry(uint32_t aCacheKey) {
           mBrowsingContext, aCacheKey);
     }
   }
-}
-
-/* static */
-bool nsDocShell::ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel) {
-  // I believe none of the about: urls should go in the history. But then
-  // that could just be me... If the intent is only deny about:blank then we
-  // should just do a spec compare, rather than two gets of the scheme and
-  // then the path.  -Gagan
-  nsresult rv;
-  nsAutoCString buf;
-
-  rv = aURI->GetScheme(buf);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
-  if (buf.EqualsLiteral("about")) {
-    rv = aURI->GetPathQueryRef(buf);
-    if (NS_FAILED(rv)) {
-      return false;
-    }
-
-    if (buf.EqualsLiteral("blank")) {
-      return false;
-    }
-    // We only want to add about:newtab if it's not privileged, and
-    // if it is not configured to show the blank page.
-    if (buf.EqualsLiteral("newtab")) {
-      if (!StaticPrefs::browser_newtabpage_enabled()) {
-        return false;
-      }
-
-      NS_ENSURE_TRUE(aChannel, false);
-      nsCOMPtr<nsIPrincipal> resultPrincipal;
-      rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
-          aChannel, getter_AddRefs(resultPrincipal));
-      NS_ENSURE_SUCCESS(rv, false);
-      return !resultPrincipal->IsSystemPrincipal();
-    }
-  }
-
-  return true;
 }
 
 void nsDocShell::UpdateActiveEntry(

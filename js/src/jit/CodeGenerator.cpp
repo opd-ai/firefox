@@ -23352,18 +23352,6 @@ void CodeGenerator::visitTakeDisposeCapability(LTakeDisposeCapability* lir) {
   masm.loadValue(capabilityAddr, output);
   masm.storeValue(JS::UndefinedValue(), capabilityAddr);
 }
-
-void CodeGenerator::visitCreateSuppressedError(LCreateSuppressedError* lir) {
-  ValueOperand error = ToValue(lir->error());
-  ValueOperand suppressed = ToValue(lir->suppressed());
-
-  pushArg(suppressed);
-  pushArg(error);
-
-  using Fn = ErrorObject* (*)(JSContext*, JS::Handle<JS::Value>,
-                              JS::Handle<JS::Value>);
-  callVM<Fn, js::CreateSuppressedError>(lir);
-}
 #endif
 
 #ifdef FUZZING_JS_FUZZILLI

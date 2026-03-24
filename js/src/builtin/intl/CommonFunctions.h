@@ -9,12 +9,12 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <string_view>
 
 #include "js/ProtoKey.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
+#include "util/LanguageId.h"
 
 namespace mozilla::intl {
 enum class ICUError : uint8_t;
@@ -55,7 +55,9 @@ extern void ReportInternalError(JSContext* cx, mozilla::intl::ICUError error);
  * an implementation, and that en-GB is more representative of the English used
  * in other locales.
  */
-static constexpr std::string_view LastDitchLocale() { return "en-GB"; }
+static constexpr LanguageId LastDitchLocale() {
+  return LanguageId::fromValidBcp49("en-GB");
+}
 
 extern JS::UniqueChars EncodeLocale(JSContext* cx, JSString* locale);
 

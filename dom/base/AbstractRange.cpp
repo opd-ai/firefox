@@ -783,100 +783,76 @@ static void ExtractRectFromOffset(nsIFrame* aFrame, const int32_t aOffset,
   }
 }
 
-static nsTextFrame* GetTextFrameForContent(nsIContent* aContent,
-                                           bool aFlushLayout) {
-  RefPtr<Document> doc = aContent->OwnerDoc();
-  PresShell* presShell = doc->GetPresShell();
-  if (!presShell) {
-    return nullptr;
-  }
-
-  // Try to un-suppress whitespace if needed, but only if we'll be able to flush
-  // to immediately see the results of the un-suppression. If we can't flush
-  // here, then calling EnsureFrameForTextNodeIsCreatedAfterFlush would be
-  // pointless anyway.
-  if (aFlushLayout) {
-    const bool frameWillBeUnsuppressed =
-        presShell->FrameConstructor()
-            ->EnsureFrameForTextNodeIsCreatedAfterFlush(
-                static_cast<CharacterData*>(aContent));
-    if (frameWillBeUnsuppressed) {
-      doc->FlushPendingNotifications(FlushType::Layout);
-    }
-  }
-
-  nsIFrame* frame = aContent->GetPrimaryFrame();
-  if (!frame || !frame->IsTextFrame()) {
-    return nullptr;
-  }
-  return static_cast<nsTextFrame*>(frame);
+static nsTextFrame* GetTextFrameForContent(nsIContent* aContent) {
+  return do_QueryFrame(aContent->GetPrimaryFrame());
 }
 
-static nsresult GetPartialTextRect(RectCallback* aCallback,
-                                   Sequence<nsString>* aTextList,
-                                   nsIContent* aContent, int32_t aStartOffset,
-                                   int32_t aEndOffset, bool aClampToEdge,
-                                   bool aFlushLayout) {
-  nsTextFrame* textFrame = GetTextFrameForContent(aContent, aFlushLayout);
-  if (textFrame) {
-    nsIFrame* relativeTo =
-        nsLayoutUtils::GetContainingBlockForClientRect(textFrame);
+static void GetPartialTextRect(RectCallback* aCallback,
+                               Sequence<nsString>* aTextList,
+                               nsIContent* aContent, int32_t aStartOffset,
+                               int32_t aEndOffset, bool aClampToEdge) {
+  nsTextFrame* textFrame = GetTextFrameForContent(aContent);
+  if (!textFrame) {
+    return;
+  }
+  nsIFrame* relativeTo =
+      nsLayoutUtils::GetContainingBlockForClientRect(textFrame);
 
-    for (nsTextFrame* f = textFrame->FindContinuationForOffset(aStartOffset); f;
-         f = static_cast<nsTextFrame*>(f->GetNextContinuation())) {
-      int32_t fstart = f->GetContentOffset(), fend = f->GetContentEnd();
-      if (fend <= aStartOffset) {
-        continue;
-      }
-      if (fstart >= aEndOffset) {
-        break;
-      }
+  for (nsTextFrame* f = textFrame->FindContinuationForOffset(aStartOffset); f;
+       f = static_cast<nsTextFrame*>(f->GetNextContinuation())) {
+    int32_t fstart = f->GetContentOffset(), fend = f->GetContentEnd();
+    if (fend <= aStartOffset) {
+      continue;
+    }
+    if (fstart >= aEndOffset) {
+      break;
+    }
 
-      // Calculate the text content offsets we'll need if text is requested.
-      int32_t textContentStart = fstart;
-      int32_t textContentEnd = fend;
+    // Calculate the text content offsets we'll need if text is requested.
+    int32_t textContentStart = fstart;
+    int32_t textContentEnd = fend;
 
-      // overlapping with the offset we want
-      f->EnsureTextRun(nsTextFrame::eInflated);
-      NS_ENSURE_TRUE(f->GetTextRun(nsTextFrame::eInflated),
-                     NS_ERROR_OUT_OF_MEMORY);
-      bool topLeftToBottomRight =
-          !f->GetTextRun(nsTextFrame::eInflated)->IsInlineReversed();
-      nsRect r = f->GetRectRelativeToSelf();
-      if (fstart < aStartOffset) {
-        // aStartOffset is within this frame
-        ExtractRectFromOffset(f, aStartOffset, &r, !topLeftToBottomRight,
-                              aClampToEdge);
-        textContentStart = aStartOffset;
-      }
-      if (fend > aEndOffset) {
-        // aEndOffset is in the middle of this frame
-        ExtractRectFromOffset(f, aEndOffset, &r, topLeftToBottomRight,
-                              aClampToEdge);
-        textContentEnd = aEndOffset;
-      }
-      r = nsLayoutUtils::TransformFrameRectToAncestor(f, r, relativeTo);
-      aCallback->AddRect(r);
+    // overlapping with the offset we want
+    f->EnsureTextRun(nsTextFrame::eInflated);
+    gfxTextRun* run = f->GetTextRun(nsTextFrame::eInflated);
+    if (NS_WARN_IF(!run)) {
+      continue;
+    }
+    bool topLeftToBottomRight = !run->IsInlineReversed();
+    nsRect r = f->GetRectRelativeToSelf();
+    if (fstart < aStartOffset) {
+      // aStartOffset is within this frame
+      ExtractRectFromOffset(f, aStartOffset, &r, !topLeftToBottomRight,
+                            aClampToEdge);
+      textContentStart = aStartOffset;
+    }
+    if (fend > aEndOffset) {
+      // aEndOffset is in the middle of this frame
+      ExtractRectFromOffset(f, aEndOffset, &r, topLeftToBottomRight,
+                            aClampToEdge);
+      textContentEnd = aEndOffset;
+    }
+    r = nsLayoutUtils::TransformFrameRectToAncestor(f, r, relativeTo);
+    aCallback->AddRect(r);
 
-      // Finally capture the text, if requested.
-      if (aTextList) {
-        nsIFrame::RenderedText renderedText =
-            f->GetRenderedText(textContentStart, textContentEnd,
-                               nsIFrame::TextOffsetType::OffsetsInContentText,
-                               nsIFrame::TrailingWhitespace::DontTrim);
+    // Finally capture the text, if requested.
+    if (aTextList) {
+      nsIFrame::RenderedText renderedText =
+          f->GetRenderedText(textContentStart, textContentEnd,
+                             nsIFrame::TextOffsetType::OffsetsInContentText,
+                             nsIFrame::TrailingWhitespace::DontTrim);
 
-        NS_ENSURE_TRUE(aTextList->AppendElement(renderedText.mString, fallible),
-                       NS_ERROR_OUT_OF_MEMORY);
+      if (!aTextList->AppendElement(renderedText.mString, fallible)) {
+        return;
       }
     }
   }
-  return NS_OK;
 }
 
 static void CollectClientRectsForSubtree(
     nsINode* aNode, RectCallback* aCollector, Sequence<nsString>* aTextList,
     nsINode* aStartContainer, uint32_t aStartOffset, nsINode* aEndContainer,
-    uint32_t aEndOffset, bool aClampToEdge, bool aFlushLayout, bool aTextOnly) {
+    uint32_t aEndOffset, bool aClampToEdge, bool aTextOnly) {
   auto* content = nsIContent::FromNode(aNode);
   if (!content) {
     return;
@@ -890,14 +866,13 @@ static void CollectClientRectsForSubtree(
                            : content->AsText()->TextDataLength();
       GetPartialTextRect(aCollector, aTextList, content,
                          static_cast<int32_t>(aStartOffset), offset,
-                         aClampToEdge, aFlushLayout);
+                         aClampToEdge);
       return;
     }
 
     if (aNode == aEndContainer) {
       GetPartialTextRect(aCollector, aTextList, content, 0,
-                         static_cast<int32_t>(aEndOffset), aClampToEdge,
-                         aFlushLayout);
+                         static_cast<int32_t>(aEndOffset), aClampToEdge);
       return;
     }
   }
@@ -926,7 +901,7 @@ static void CollectClientRectsForSubtree(
        child = childIter.GetNextChild()) {
     CollectClientRectsForSubtree(child, aCollector, aTextList, aStartContainer,
                                  aStartOffset, aEndContainer, aEndOffset,
-                                 aClampToEdge, aFlushLayout, aTextOnly);
+                                 aClampToEdge, aTextOnly);
   }
 }
 
@@ -964,32 +939,34 @@ void AbstractRange::CollectClientRectsAndText(
 
   RangeSubtreeIterator iter;
 
-  nsresult rv = iter.Init(aRange);
-  if (NS_FAILED(rv)) return;
+  if (NS_FAILED(iter.Init(aRange))) {
+    return;
+  }
 
   if (iter.IsDone()) {
     // the range is collapsed, only continue if the cursor is in a text node
-    if (aStartContainer->IsText()) {
-      nsTextFrame* textFrame =
-          GetTextFrameForContent(aStartContainer->AsText(), aFlushLayout);
-      if (textFrame) {
-        int32_t outOffset;
-        nsIFrame* outFrame;
-        textFrame->GetChildFrameContainingOffset(
-            static_cast<int32_t>(aStartOffset), false, &outOffset, &outFrame);
-        if (outFrame) {
-          nsIFrame* relativeTo =
-              nsLayoutUtils::GetContainingBlockForClientRect(outFrame);
-          nsRect r = outFrame->GetRectRelativeToSelf();
-          ExtractRectFromOffset(outFrame, static_cast<int32_t>(aStartOffset),
-                                &r, false, aClampToEdge);
-          r.SetWidth(0);
-          r = nsLayoutUtils::TransformFrameRectToAncestor(outFrame, r,
-                                                          relativeTo);
-          aCollector->AddRect(r);
-        }
-      }
+    if (!aStartContainer->IsText()) {
+      return;
     }
+    nsTextFrame* textFrame = GetTextFrameForContent(aStartContainer->AsText());
+    if (!textFrame) {
+      return;
+    }
+    int32_t outOffset = 0;
+    nsIFrame* outFrame = nullptr;
+    textFrame->GetChildFrameContainingOffset(static_cast<int32_t>(aStartOffset),
+                                             false, &outOffset, &outFrame);
+    if (!outFrame) {
+      return;
+    }
+    nsIFrame* relativeTo =
+        nsLayoutUtils::GetContainingBlockForClientRect(outFrame);
+    nsRect r = outFrame->GetRectRelativeToSelf();
+    ExtractRectFromOffset(outFrame, static_cast<int32_t>(aStartOffset), &r,
+                          false, aClampToEdge);
+    r.SetWidth(0);
+    r = nsLayoutUtils::TransformFrameRectToAncestor(outFrame, r, relativeTo);
+    aCollector->AddRect(r);
     return;
   }
 
@@ -999,7 +976,7 @@ void AbstractRange::CollectClientRectsAndText(
 
     CollectClientRectsForSubtree(node, aCollector, aTextList, aStartContainer,
                                  aStartOffset, aEndContainer, aEndOffset,
-                                 aClampToEdge, aFlushLayout, false);
+                                 aClampToEdge, false);
   } while (!iter.IsDone());
 }
 

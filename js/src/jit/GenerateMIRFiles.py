@@ -60,6 +60,7 @@ type_policies = {
     "String": "StringPolicy",
     "Symbol": "SymbolPolicy",
     "Slots": "NoTypePolicy",
+    "any": "NoTypePolicy",
 }
 
 
@@ -292,10 +293,8 @@ def gen_mir_class(
         for oper_name in operands:
             mir_type = operands[oper_name]
 
-            # Skip over Value-typed operands of instructions like IsNullOrUndefined,
-            # which allow any typed input. Maybe we should give these operands a
-            # new "Any" type instead?
-            if no_type_policy and mir_type == "Value":
+            # Skip over operands which can have any type.
+            if mir_type == "any":
                 continue
 
             policy = type_policies.get(mir_type, "NoTypePolicy")

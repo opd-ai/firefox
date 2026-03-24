@@ -589,7 +589,9 @@ void nsWindow::DispatchResized() {
     return;
   }
 
-  auto clientSize = gUseStableRounding
+  // Wayland popups are painted at 0,0 but we use mClientArea.x/y as popup
+  // position so we can't use it for rounding of size coordinates.
+  auto clientSize = gUseStableRounding && !IsWaylandPopup()
                         ? GetClientSize()
                         : LayoutDeviceIntSize::Round(mClientArea.Size() *
                                                      GetDesktopToDeviceScale());
@@ -4428,14 +4430,6 @@ Maybe<GdkWindowEdge> nsWindow::CheckResizerEdge(
 
 template <typename Event>
 static LayoutDeviceIntPoint GetRefPoint(nsWindow* aWindow, Event* aEvent) {
-  if (aEvent->window == aWindow->GetGdkWindow()) {
-    // we are the window that the event happened on so no need for expensive
-    // WidgetToScreenOffset
-    return aWindow->GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
-  }
-  // XXX we're never quite sure which GdkWindow the event came from due to our
-  // custom bubbling in scroll_event_cb(), so use ScreenToWidget to translate
-  // the screen root coordinates into coordinates relative to the inner widget.
   return aWindow->GdkEventCoordsToDevicePixels(aEvent->x_root, aEvent->y_root) -
          aWindow->WidgetToScreenOffset();
 }

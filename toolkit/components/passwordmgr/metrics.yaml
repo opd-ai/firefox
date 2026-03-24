@@ -1006,6 +1006,39 @@ pwmgr:
           Time when login was last used (rounded to month)
         type: string
 
+  rust_origin_failure:
+    type: event
+    description: >
+      Records detailed information when a login origin or form_action_origin
+      fails validation during Rust mirror operations.
+    bugs:
+      - https://bugzil.la/2021252
+    data_reviews:
+      - https://bugzil.la/2021252
+    data_sensitivity:
+      - stored_content
+    notification_emails:
+      - passwords-dev@mozilla.org
+    expires: 152
+    send_in_pings:
+      - pwmgr-origin-failure
+    extra_keys:
+      metric_version:
+        type: string
+        description: Identifier for rust mirror telemetry version
+      origin:
+        type: string
+        description: Raw origin string of the login entry
+      form_action_origin:
+        type: string
+        description: Raw form_action_origin string of the login entry
+      time_created:
+        type: string
+        description: Time when login was created (rounded to month)
+      time_last_used:
+        type: string
+        description: Time when login was last used (rounded to month)
+
   saving_enabled:
     type: boolean
     lifetime: application

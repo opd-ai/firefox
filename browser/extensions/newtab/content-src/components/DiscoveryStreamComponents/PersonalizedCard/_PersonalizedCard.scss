@@ -1,6 +1,7 @@
 .personalized-card-wrapper {
   background-color: var(--background-color-canvas);
-  border: 2px solid var(--card-border-color);
+  // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+  border: 2px solid var(--card-border-color, var(--border-color-card));
   color: var(--text-color);
   padding: var(--space-xxlarge);
   border-radius: var(--border-radius-large);
@@ -38,7 +39,8 @@
 
     h2 {
       font-size: var(--font-size-xxlarge);
-      font-weight: var(--font-weight-heading);
+      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+      font-weight: var(--font-weight-heading, var(--heading-font-weight));
     }
 
     .personalized-card-link {

@@ -470,16 +470,11 @@ int32_t js::DateTimeInfo::internalGetOffsetMilliseconds(int64_t milliseconds,
 
 bool js::DateTimeInfo::internalTimeZoneDisplayName(
     TimeZoneDisplayNameVector& result, int64_t utcMilliseconds,
-    const char* locale) {
-  MOZ_ASSERT(locale != nullptr);
+    LanguageId locale) {
+  MOZ_ASSERT(locale != LanguageId::und());
 
   // Clear any previously cached names when the default locale changed.
-  if (!locale_ || std::strcmp(locale_.get(), locale) != 0) {
-    locale_ = DuplicateString(locale);
-    if (!locale_) {
-      return false;
-    }
-
+  if (locale_ != locale) {
     standardName_.reset();
     daylightSavingsName_.reset();
   }
@@ -495,9 +490,12 @@ bool js::DateTimeInfo::internalTimeZoneDisplayName(
                                            : standardName_;
   if (!cachedName) {
     // Retrieve the display name for the given locale.
+    auto localeStr = locale.toString();
 
     intl::FormatBuffer<char16_t, 0, js::SystemAllocPolicy> buffer;
-    if (timeZone()->GetDisplayName(locale, daylightSavings, buffer).isErr()) {
+    if (timeZone()
+            ->GetDisplayName(localeStr.c_str(), daylightSavings, buffer)
+            .isErr()) {
       return false;
     }
 

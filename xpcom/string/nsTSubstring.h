@@ -34,13 +34,6 @@ class nsTString;
 template <typename T>
 class nsTSubstring;
 
-template <typename T>
-struct type_identity {
-  using type = T;
-};
-template <typename T>
-using type_identity_t = typename type_identity<T>::type;
-
 namespace mozilla {
 
 /**
@@ -425,12 +418,11 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
     aBuffer->AddRef();
     Assign(already_AddRefed<mozilla::StringBuffer>(aBuffer), aLength);
   }
-  void NS_FASTCALL Assign(already_AddRefed<mozilla::StringBuffer> aBuffer,
-                          size_type aLength) {
+  void Assign(already_AddRefed<mozilla::StringBuffer> aBuffer,
+              size_type aLength) {
     mozilla::StringBuffer* buffer = aBuffer.take();
     auto* data = reinterpret_cast<char_type*>(buffer->Data());
-    MOZ_DIAGNOSTIC_ASSERT(data[aLength] == char_type(0),
-                          "data should be null terminated");
+    MOZ_ASSERT(data[aLength] == char_type(0), "data should be null terminated");
     Finalize();
     SetData(data, aLength, DataFlags::REFCOUNTED | DataFlags::TERMINATED);
   }
@@ -741,7 +733,8 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
   template <typename... Args>
   void AppendFmt(
-      fmt::basic_format_string<char_type, type_identity_t<Args>...> aFormatStr,
+      fmt::basic_format_string<char_type, std::type_identity_t<Args>...>
+          aFormatStr,
       Args&&... aArgs) {
     AppendVfmt(
         aFormatStr,
@@ -1184,8 +1177,8 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
  protected:
   constexpr void AssertValid() {
-    MOZ_DIAGNOSTIC_ASSERT(!(this->mClassFlags & ClassFlags::INVALID_MASK));
-    MOZ_DIAGNOSTIC_ASSERT(!(this->mDataFlags & DataFlags::INVALID_MASK));
+    MOZ_ASSERT(!(this->mClassFlags & ClassFlags::INVALID_MASK));
+    MOZ_ASSERT(!(this->mDataFlags & DataFlags::INVALID_MASK));
     MOZ_ASSERT(!(this->mClassFlags & ClassFlags::NULL_TERMINATED) ||
                    (this->mDataFlags & DataFlags::TERMINATED),
                "String classes whose static type guarantees a null-terminated "

@@ -330,7 +330,11 @@ static bool ResolveLocale(JSContext* cx,
   }
 
   // Finish initialization by setting the actual locale.
-  pluralRules->setLocale(resolved.dataLocale());
+  auto* locale = resolved.toLocale(cx);
+  if (!locale) {
+    return false;
+  }
+  pluralRules->setLocale(locale);
 
   MOZ_ASSERT(pluralRules->isLocaleResolved(), "locale successfully resolved");
   return true;

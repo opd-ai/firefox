@@ -28,8 +28,9 @@
 # ========
 # A list of operands for the MIR op class constructor. Each operand is a
 # MIR node. The operand kind is specified from the one of the kinds from
-# the MIRType enum in IonTypes.h. The specified types for the
-# operands will decide the type policy for the instruction.
+# the MIRType enum in IonTypes.h or `any` if the operand has no specific type.
+# The specified types for the operands will decide the type policy for the
+# instruction.
 #
 # The naming of operands is how the NAMED_OPERANDS macro will define
 # its operands.
@@ -515,7 +516,7 @@
 
 - name: AssertFloat32
   operands:
-    value: Value
+    value: any
   arguments:
     mustBeFloat32: bool
   result_type: None
@@ -3625,7 +3626,7 @@
 
 - name: IsNullOrUndefined
   operands:
-    value: Value
+    value: any
   result_type: Boolean
   movable: true
   folds_to: custom
@@ -4934,14 +4935,5 @@
   operands:
     environment: Object
   result_type: Value
-  generate_lir: true
-
-- name: CreateSuppressedError
-  operands:
-    error: Value
-    suppressed: Value
-  result_type: Object
-  alias_set: none
-  possibly_calls: true
   generate_lir: true
 #endif

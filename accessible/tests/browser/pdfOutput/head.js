@@ -86,7 +86,6 @@ function addPdfTest(testName, doc, task, options = {}) {
     await helper.assertPrintToFile(file, () => {
       helper.click(helper.get("print-button"));
     });
-    await helper.startPrint();
     const data = await IOUtils.read(file.path);
     const pdf = await pdfjsLib.getDocument({ data }).promise;
     await task(pdf);

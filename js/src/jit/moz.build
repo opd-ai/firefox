@@ -29,6 +29,7 @@ UNIFIED_SOURCES += [
     "BaselineJIT.cpp",
     "BitSet.cpp",
     "BranchHinting.cpp",
+    "BranchPruning.cpp",
     "BytecodeAnalysis.cpp",
     "CacheIR.cpp",
     "CacheIRAOT.cpp",
@@ -44,6 +45,7 @@ UNIFIED_SOURCES += [
     "ExecutableAllocator.cpp",
     "FlushICache.cpp",
     "FoldLinearArithConstants.cpp",
+    "FoldTests.cpp",
     "GraphSpewer.cpp",
     "InlinableNatives.cpp",
     "InstructionReordering.cpp",
@@ -98,6 +100,7 @@ UNIFIED_SOURCES += [
     "Trampoline.cpp",
     "TrampolineNatives.cpp",
     "TrialInlining.cpp",
+    "TypeAnalysis.cpp",
     "TypePolicy.cpp",
     "UnrollLoops.cpp",
     "ValueNumbering.cpp",
@@ -108,6 +111,7 @@ UNIFIED_SOURCES += [
     "WarpOracle.cpp",
     "WarpSnapshot.cpp",
     "WasmBCE.cpp",
+    "WasmRefTypeAnalysis.cpp",
     "XrayJitInfo.cpp",
 ]
 

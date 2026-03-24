@@ -116,7 +116,11 @@ async function createBackupAndRecover(
   let currentSelectableProfile = {
     name: "current-profile",
     avatar: "current-avatar",
-    theme: { themeBg: "#ffffff" },
+    theme: {
+      themeId: "{4223a94a-d3f9-40e9-95dd-99aca80ea04b}",
+      themeBg: "#abdfff",
+      themeFg: "#000000",
+    },
     hasCustomAvatar: false,
   };
 
@@ -136,6 +140,7 @@ async function createBackupAndRecover(
 
   // Track metadata for legacy->selectable with replaceCurrentProfile
   let setAvatarStub = sandbox.stub().resolves();
+  let setThemeAsyncStub = sandbox.stub().resolves();
   let newSelectableProfile = {
     id: 1,
     name: "new-profile",
@@ -143,6 +148,7 @@ async function createBackupAndRecover(
     theme: { themeBg: "#000000" },
     path: recoveredProfilePath,
     setAvatar: setAvatarStub,
+    setThemeAsync: setThemeAsyncStub,
   };
 
   // Stub createNewProfile (called by recoverFromSnapshotFolderIntoSelectableProfile)
@@ -169,6 +175,13 @@ async function createBackupAndRecover(
     SelectableProfileService,
     "launchInstance"
   );
+
+  sandbox
+    .stub(lazy.SelectableProfileService, "getColorsForDefaultTheme")
+    .returns({
+      themeFg: "rgba(21, 20, 26, 1)",
+      themeBg: "rgba(240, 240, 244, 1)",
+    });
 
   // currentProfile is null when staying in legacy mode or when selectable
   // profiles are disabled entirely.
@@ -245,6 +258,7 @@ async function createBackupAndRecover(
     newSelectableProfile,
     currentSelectableProfile,
     setAvatarStub,
+    setThemeAsyncStub,
     restoreStartedEvents,
     restoreID,
   };
@@ -334,6 +348,7 @@ add_task(async function test_legacy_backup_into_selectable_profile() {
     maybeSetupDataStoreStub,
     recoverFromSnapshotFolderSpy,
     recoverFromSnapshotFolderIntoSelectableProfileSpy,
+    setThemeAsyncStub,
   } = await createBackupAndRecover(sandbox, true, false);
 
   Assert.ok(
@@ -351,6 +366,15 @@ add_task(async function test_legacy_backup_into_selectable_profile() {
   Assert.ok(
     recoverFromSnapshotFolderIntoSelectableProfileSpy.calledOnce,
     "recoverFromSnapshotFolderIntoSelectableProfile should be called for legacy-to-selectable recovery"
+  );
+  Assert.ok(
+    setThemeAsyncStub.calledOnce,
+    "setThemeAsync should be called to set the legacy backup's theme"
+  );
+  Assert.equal(
+    setThemeAsyncStub.firstCall.args[0].themeId,
+    "default-theme@mozilla.org",
+    "Should fall back to default theme when backup has no prefs.js"
   );
 
   sandbox.restore();
@@ -562,6 +586,7 @@ add_task(
       currentSelectableProfile,
       deleteAndQuitStub,
       setAvatarStub,
+      setThemeAsyncStub,
     } = await createBackupAndRecover(sandbox, true, false, {
       replaceCurrentProfile: true,
     });
@@ -580,10 +605,14 @@ add_task(
       currentSelectableProfile.avatar,
       "setAvatar should be called with current profile's avatar"
     );
-    Assert.equal(
-      newSelectableProfile.theme,
+    Assert.ok(
+      setThemeAsyncStub.calledOnce,
+      "setThemeAsync should be called to set theme"
+    );
+    Assert.deepEqual(
+      setThemeAsyncStub.firstCall.args[0],
       currentSelectableProfile.theme,
-      "New profile should inherit current profile's theme"
+      "setThemeAsync should be called with current profile's theme"
     );
     Assert.ok(
       deleteAndQuitStub.calledOnce,

@@ -8984,16 +8984,6 @@ void LIRGenerator::visitTakeDisposeCapability(MTakeDisposeCapability* ins) {
   defineBox(lir, ins);
   assignSafepoint(lir, ins);
 }
-
-void LIRGenerator::visitCreateSuppressedError(MCreateSuppressedError* ins) {
-  MDefinition* error = ins->error();
-  MDefinition* suppressed = ins->suppressed();
-
-  LCreateSuppressedError* lir = new (alloc())
-      LCreateSuppressedError(useBoxAtStart(error), useBoxAtStart(suppressed));
-  define(lir, ins);
-  assignSafepoint(lir, ins);
-}
 #endif
 
 #ifdef FUZZING_JS_FUZZILLI

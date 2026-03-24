@@ -119,6 +119,8 @@ skip-if = [
 ]
 support-files = ["browser_multiple_popups.html"]
 
+["browser_newtab_session_history.js"]
+
 ["browser_object_attachment.js"]
 support-files = [
   "file_img_object_attachment.html",

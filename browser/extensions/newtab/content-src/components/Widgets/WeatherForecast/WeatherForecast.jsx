@@ -448,7 +448,11 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
                 <span>
                   {slot.temperature[prefs["weather.temperatureUnits"]]}&deg;
                 </span>
-                <span className={`weather-icon iconId${slot.icon_id}`}></span>
+                <span
+                  className={`weather-icon iconId${slot.icon_id}`}
+                  aria-label={slot.summary}
+                  role="img"
+                ></span>
                 <span>
                   {(() => {
                     const date = new Date(slot.date_time);

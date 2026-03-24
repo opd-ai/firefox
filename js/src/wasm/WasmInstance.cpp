@@ -924,30 +924,18 @@ static int32_t MemoryInit(JSContext* cx, Instance* instance,
     return -1;
   }
 
-  bool isOOM = false;
-
   if (&srcTable == &dstTable && dstOffset > srcOffset) {
     for (uint32_t i = len; i > 0; i--) {
-      if (!dstTable->copy(cx, *srcTable, dstOffset + (i - 1),
-                          srcOffset + (i - 1))) {
-        isOOM = true;
-        break;
-      }
+      dstTable->copy(*srcTable, dstOffset + (i - 1), srcOffset + (i - 1));
     }
   } else if (&srcTable == &dstTable && dstOffset == srcOffset) {
     // No-op
   } else {
     for (uint32_t i = 0; i < len; i++) {
-      if (!dstTable->copy(cx, *srcTable, dstOffset + i, srcOffset + i)) {
-        isOOM = true;
-        break;
-      }
+      dstTable->copy(*srcTable, dstOffset + i, srcOffset + i);
     }
   }
 
-  if (isOOM) {
-    return -1;
-  }
   return 0;
 }
 

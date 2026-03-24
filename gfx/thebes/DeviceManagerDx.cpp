@@ -1126,10 +1126,13 @@ RefPtr<ID3D11Device> DeviceManagerDx::CreateMediaEngineDevice() {
 
   HRESULT hr;
   RefPtr<ID3D11Device> device;
-  UINT flags = D3D11_CREATE_DEVICE_VIDEO_SUPPORT |
-               D3D11_CREATE_DEVICE_BGRA_SUPPORT |
+  UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
                D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS;
-  if (!CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, flags, hr, device)) {
+  RefPtr<IDXGIAdapter1> adapter = GetDXGIAdapterLocked();
+  if (!adapter) {
+    return nullptr;
+  }
+  if (!CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, flags, hr, device)) {
     return nullptr;
   }
   if (FAILED(hr) || !device || !D3D11Checks::DoesDeviceWork()) {

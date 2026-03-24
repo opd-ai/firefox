@@ -23,6 +23,7 @@
 #include "js/Proxy.h"
 #include "js/RootingAPI.h"
 #include "js/Wrapper.h"
+#include "util/DefaultLocale.h"
 #include "util/RandomSeed.h"
 #include "vm/Compartment.h"
 #include "vm/DateTime.h"
@@ -552,9 +553,20 @@ void Realm::clearScriptCounts() { zone()->clearScriptCounts(this); }
 
 void Realm::clearScriptLCov() { zone()->clearScriptLCov(this); }
 
-const char* Realm::getLocale() const {
+LanguageId Realm::getLocale() {
   if (RefPtr<LocaleString> locale = behaviors_.localeOverride()) {
-    return locale->chars();
+    if (localeId_ == LanguageId::und()) {
+      localeId_ = DefaultLocaleFrom(locale.get()->chars());
+
+      // Replace "und" with "und-Zzzz-ZZ" to mark the locale as resolved.
+      //
+      // "und-Zzzz-ZZ" is an undetermined language with unknown script and
+      // region.
+      if (localeId_ == LanguageId::und()) {
+        localeId_ = LanguageId::fromValidBcp49("und-Zzzz-ZZ");
+      }
+    }
+    return localeId_;
   }
   return runtime_->getDefaultLocale();
 }
@@ -565,6 +577,7 @@ void Realm::setLocaleOverride(const char* locale) {
   ReleaseAllJITCode(runtime_->gcContext());
 
   behaviors_.setLocaleOverride(locale);
+  localeId_ = LanguageId::und();
 }
 
 js::DateTimeInfo* Realm::getDateTimeInfo() {
